@@ -3,6 +3,8 @@ import random
 from sys import exit
 import logging
 import traceback
+import json
+import os
 
 # Configure logging for error handling
 logging.basicConfig(
@@ -53,8 +55,14 @@ if not safe_init():
 
 try:
     clock = pg.time.Clock()
-    SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
-    screen = create_display(SCREEN_WIDTH, SCREEN_HEIGHT, "Bottle Ops")
+    
+    # Get screen dimensions and create fullscreen display
+    info = pg.display.Info()
+    SCREEN_WIDTH = info.current_w
+    SCREEN_HEIGHT = info.current_h
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
+    pg.display.set_caption("Bottle Ops")
+    logging.info(f"Fullscreen display created: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
     
     # Colors
     WHITE = (255, 255, 255)
@@ -63,9 +71,16 @@ try:
     BLUE = (0, 100, 255)
     GREEN = (0, 255, 100)
     GRAY = (128, 128, 128)
+    DARK_GRAY = (64, 64, 64)
+    YELLOW = (255, 255, 0)
     
     # Safe font loading
-    font = load_font(None, 48)
+    font_large = load_font(None, 72)
+    font_medium = load_font(None, 48)
+    font_small = load_font(None, 36)
+    
+    # Game settings
+    is_fullscreen = True
     
     # Player constants with depth
     player_width, player_height = 80, 100
@@ -102,11 +117,86 @@ try:
     bottle_spawn_time = 1000
     last_bottle_time = pg.time.get_ticks()
     bottles = []
+    
+    # Game states
+    MENU = 0
+    PLAYING = 1
+    SETTINGS = 2
+    LEADERBOARD = 3
+    USERNAME_INPUT = 4
+    GAME_OVER = 5
+    
+    current_state = MENU
+    current_username = ""
+    input_active = False
+    final_score = 0
 
 except Exception as e:
     logging.error(f"Failed to initialize game: {e}")
     pg.quit()
     exit(1)
+
+class LeaderboardManager:
+    def __init__(self, filename="leaderboard.json"):
+        self.filename = filename
+        self.scores = self.load_scores()
+    
+    def load_scores(self):
+        """Load scores from file"""
+        try:
+            if os.path.exists(self.filename):
+                with open(self.filename, 'r') as f:
+                    data = json.load(f)
+                    return data.get('scores', [])
+            return []
+        except Exception as e:
+            logging.error(f"Error loading leaderboard: {e}")
+            return []
+    
+    def save_scores(self):
+        """Save scores to file"""
+        try:
+            with open(self.filename, 'w') as f:
+                json.dump({'scores': self.scores}, f, indent=2)
+        except Exception as e:
+            logging.error(f"Error saving leaderboard: {e}")
+    
+    def add_score(self, username, score):
+        """Add a new score to the leaderboard"""
+        self.scores.append({'username': username, 'score': score})
+        self.scores.sort(key=lambda x: x['score'], reverse=True)
+        self.scores = self.scores[:10]  # Keep only top 10
+        self.save_scores()
+    
+    def get_top_scores(self, limit=10):
+        """Get top scores"""
+        return self.scores[:limit]
+
+class Button:
+    def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=YELLOW):
+        self.rect = pg.Rect(x, y, width, height)
+        self.text = text
+        self.font = font
+        self.color = color
+        self.hover_color = hover_color
+        self.is_hovered = False
+    
+    def handle_event(self, event):
+        if event.type == pg.MOUSEMOTION:
+            self.is_hovered = self.rect.collidepoint(event.pos)
+        elif event.type == pg.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(event.pos):
+                return True
+        return False
+    
+    def draw(self, surface):
+        color = self.hover_color if self.is_hovered else self.color
+        pg.draw.rect(surface, DARK_GRAY, self.rect)
+        pg.draw.rect(surface, color, self.rect, 3)
+        
+        text_surface = self.font.render(self.text, True, color)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        surface.blit(text_surface, text_rect)
 
 class Bottle:
     def __init__(self, start_x, start_y, target_x, target_y):
@@ -293,21 +383,156 @@ def draw_player_with_depth(surface, x, y, width, height, is_jumping):
         pg.draw.line(surface, shadow_color, (int(x), int(y)), (int(x + shadow_offset), int(y + shadow_offset)), 2)
         pg.draw.line(surface, shadow_color, (int(x + width), int(y)), (int(x + width + shadow_offset), int(y + shadow_offset)), 2)
         
-        # Add jump indicator
-        if is_jumping:
-            # Draw a small indicator showing the player is in "dodge mode"
-            indicator_rect = pg.Rect(int(x + width//2 - 5), int(y - 10), 10, 5)
-            pg.draw.rect(surface, GREEN, indicator_rect)
-        
     except Exception as e:
         logging.error(f"Error drawing player with depth: {e}")
         # Fallback to simple rectangle
         player_rect = pg.Rect(int(x), int(y), width, height)
         pg.draw.rect(surface, WHITE, player_rect)
 
+def reset_game():
+    """Reset all game variables for a new game"""
+    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, start_time, last_bottle_time, bottles
+    
+    player_x = SCREEN_WIDTH // 2
+    player_y = player_base_y
+    vel_y = 0
+    is_on_ground = False
+    drunk_x = SCREEN_WIDTH // 2
+    drunk_direction = 1
+    lives = 9
+    start_time = pg.time.get_ticks()
+    last_bottle_time = pg.time.get_ticks()
+    bottles = []
+
+def show_menu():
+    """Display the main menu"""
+    screen.fill(BLACK)
+    
+    # Title
+    title_text = font_large.render("BOTTLE OPS", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+    screen.blit(title_text, title_rect)
+    
+    # Buttons
+    button_width = 300
+    button_height = 60
+    button_x = SCREEN_WIDTH // 2 - button_width // 2
+    
+    play_button = Button(button_x, SCREEN_HEIGHT // 2 - 100, button_width, button_height, "PLAY", font_medium)
+    settings_button = Button(button_x, SCREEN_HEIGHT // 2 - 20, button_width, button_height, "SETTINGS", font_medium)
+    leaderboard_button = Button(button_x, SCREEN_HEIGHT // 2 + 60, button_width, button_height, "LEADERBOARD", font_medium)
+    exit_button = Button(button_x, SCREEN_HEIGHT // 2 + 140, button_width, button_height, "EXIT", font_medium)
+    
+    play_button.draw(screen)
+    settings_button.draw(screen)
+    leaderboard_button.draw(screen)
+    exit_button.draw(screen)
+    
+    return play_button, settings_button, leaderboard_button, exit_button
+
+def show_settings():
+    """Display the settings menu"""
+    screen.fill(BLACK)
+    
+    # Title
+    title_text = font_large.render("SETTINGS", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+    screen.blit(title_text, title_rect)
+    
+    # Fullscreen toggle
+    fullscreen_text = "Fullscreen: ON" if is_fullscreen else "Fullscreen: OFF"
+    fs_button = Button(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 50, 400, 60, fullscreen_text, font_medium)
+    fs_button.draw(screen)
+    
+    # Back button
+    back_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 + 50, 300, 60, "BACK", font_medium)
+    back_button.draw(screen)
+    
+    return fs_button, back_button
+
+def show_leaderboard():
+    """Display the leaderboard"""
+    screen.fill(BLACK)
+    
+    # Title
+    title_text = font_large.render("LEADERBOARD", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 6))
+    screen.blit(title_text, title_rect)
+    
+    # Get scores
+    scores = leaderboard.get_top_scores()
+    
+    # Display scores
+    y_offset = SCREEN_HEIGHT // 4
+    for i, score_data in enumerate(scores):
+        username = score_data['username']
+        score = score_data['score']
+        minutes = score // 60
+        seconds = score % 60
+        
+        rank_text = f"{i+1}. {username} - {minutes:02d}:{seconds:02d}"
+        color = YELLOW if i == 0 else WHITE
+        
+        score_surface = font_small.render(rank_text, True, color)
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset + i * 40))
+        screen.blit(score_surface, score_rect)
+    
+    # Back button
+    back_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT - 150, 300, 60, "BACK", font_medium)
+    back_button.draw(screen)
+    
+    return back_button
+
+def show_username_input():
+    """Display username input screen"""
+    screen.fill(BLACK)
+    
+    # Title
+    title_text = font_large.render("ENTER USERNAME", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    screen.blit(title_text, title_rect)
+    
+    # Input box
+    input_box = pg.Rect(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 30, 400, 60)
+    color = WHITE if input_active else GRAY
+    pg.draw.rect(screen, color, input_box, 3)
+    
+    # Username text
+    username_surface = font_medium.render(current_username, True, WHITE)
+    screen.blit(username_surface, (input_box.x + 10, input_box.y + 15))
+    
+    # Instructions
+    inst_text = font_small.render("Press ENTER to continue", True, GRAY)
+    inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+    screen.blit(inst_text, inst_rect)
+    
+    return input_box
+
+def show_game_over_screen():
+    """Display game over screen"""
+    screen.fill(BLACK)
+    
+    # Game Over text
+    go_text = font_large.render("GAME OVER", True, RED)
+    go_rect = go_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    screen.blit(go_text, go_rect)
+    
+    # Final score
+    minutes = final_score // 60
+    seconds = final_score % 60
+    score_text = font_medium.render(f"Final Time: {minutes:02d}:{seconds:02d}", True, WHITE)
+    score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    screen.blit(score_text, score_rect)
+    
+    # Continue button
+    continue_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 + 80, 300, 60, "CONTINUE", font_medium)
+    continue_button.draw(screen)
+    
+    return continue_button
+
 def safe_game_loop():
     """Main game loop with comprehensive error handling"""
-    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, last_bottle_time, bottles, start_time
+    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, last_bottle_time, bottles, start_time, screen
     
     running = True
     frame_count = 0
@@ -420,7 +645,7 @@ def safe_game_loop():
                                         
                                         if lives <= 0:
                                             logging.info("Game over - no lives remaining")
-                                            return False
+                                            return current_time - start_time  # Return survival time
                                         
                         except Exception as e:
                             logging.error(f"Error with bottle {i}: {e}")
@@ -452,27 +677,16 @@ def safe_game_loop():
                 # HUD
                 try:
                     # Lives on top-left
-                    life_text = font.render(f"Lives: {lives}", True, GREEN)
+                    life_text = font_medium.render(f"Lives: {lives}", True, GREEN)
                     screen.blit(life_text, (20, 20))
                     
                     # Time survived on top-right
                     time_survived = (current_time - start_time) // 1000
                     minutes = time_survived // 60
                     seconds = time_survived % 60
-                    time_text = font.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
+                    time_text = font_medium.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
                     time_rect = time_text.get_rect()
                     screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - 20, 20))
-                    
-                    # Debug info (optional - remove in final version)
-                    active_bottles = len([b for b in bottles if b.active])
-                    debug_text = font.render(f"Bottles: {active_bottles}", True, WHITE)
-                    screen.blit(debug_text, (20, 80))
-                    
-                    # Jump status indicator
-                    if not is_on_ground:
-                        jump_text = font.render("DODGING!", True, GREEN)
-                        jump_rect = jump_text.get_rect(center=(SCREEN_WIDTH // 2, 100))
-                        screen.blit(jump_text, jump_rect)
                         
                 except Exception as e:
                     logging.error(f"Error drawing HUD: {e}")
@@ -482,11 +696,11 @@ def safe_game_loop():
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
                             logging.info("User quit game")
-                            return True
+                            return -1  # Special return code for quit
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
                                 logging.info("User pressed escape")
-                                return True
+                                return -1  # Return to menu
                 except Exception as e:
                     logging.error(f"Error handling events: {e}")
                 
@@ -503,55 +717,153 @@ def safe_game_loop():
                 
     except KeyboardInterrupt:
         logging.info("Game interrupted by user")
-        return True
+        return -1
     except Exception as e:
         logging.error(f"Critical error in game loop: {e}")
         logging.error(traceback.format_exc())
-        return False
+        return -1
 
-def show_game_over_screen(clean_exit=False):
-    """Show game over screen with error handling"""
+def main():
+    """Main game function with menu system"""
+    global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard
+    
+    leaderboard = LeaderboardManager()
+    
     try:
-        screen.fill(BLACK)
-        
-        if clean_exit:
-            message = "Thanks for playing!"
-            color = GREEN
-        else:
-            message = "GAME OVER 💀"
-            color = RED
+        while True:
+            if current_state == MENU:
+                play_btn, settings_btn, leaderboard_btn, exit_btn = show_menu()
+                
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        return
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE:
+                            return
+                    
+                    # Handle button clicks
+                    play_btn.handle_event(event)
+                    settings_btn.handle_event(event)
+                    leaderboard_btn.handle_event(event)
+                    exit_btn.handle_event(event)
+                    
+                    if play_btn.handle_event(event):
+                        current_state = USERNAME_INPUT
+                        current_username = ""
+                        input_active = True
+                    elif settings_btn.handle_event(event):
+                        current_state = SETTINGS
+                    elif leaderboard_btn.handle_event(event):
+                        current_state = LEADERBOARD
+                    elif exit_btn.handle_event(event):
+                        return
             
-        go_text = font.render(message, True, color)
-        text_rect = go_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-        screen.blit(go_text, text_rect)
-        
-        # Instructions
-        inst_text = font.render("Press ESC to exit", True, WHITE)
-        inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
-        screen.blit(inst_text, inst_rect)
-        
-        pg.display.flip()
-        
-        # Wait for input or timeout
-        waiting = True
-        start_time = pg.time.get_ticks()
-        timeout = 5000
-        
-        while waiting and pg.time.get_ticks() - start_time < timeout:
-            for event in pg.event.get():
-                if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
-                    waiting = False
-            pg.time.wait(100)
+            elif current_state == USERNAME_INPUT:
+                input_box = show_username_input()
+                
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        return
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE:
+                            current_state = MENU
+                        elif event.key == pg.K_RETURN:
+                            if current_username.strip():
+                                reset_game()
+                                current_state = PLAYING
+                        elif event.key == pg.K_BACKSPACE:
+                            current_username = current_username[:-1]
+                        else:
+                            if len(current_username) < 15 and event.unicode.isprintable():
+                                current_username += event.unicode
+                    elif event.type == pg.MOUSEBUTTONDOWN:
+                        input_active = input_box.collidepoint(event.pos)
+            
+            elif current_state == PLAYING:
+                survival_time = safe_game_loop()
+                if survival_time == -1:  # User quit or escaped
+                    current_state = MENU
+                else:
+                    final_score = survival_time // 1000  # Convert to seconds
+                    leaderboard.add_score(current_username, final_score)
+                    current_state = GAME_OVER
+            
+            elif current_state == SETTINGS:
+                fs_btn, back_btn = show_settings()
+                
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        return
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE:
+                            current_state = MENU
+                    
+                    fs_btn.handle_event(event)
+                    back_btn.handle_event(event)
+                    
+                    if fs_btn.handle_event(event):
+                        # Toggle fullscreen
+                        try:
+                            is_fullscreen = not is_fullscreen
+                            if is_fullscreen:
+                                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
+                                logging.info("Switched to fullscreen mode")
+                            else:
+                                screen = pg.display.set_mode((1280, 720))
+                                logging.info("Switched to windowed mode")
+                        except Exception as e:
+                            logging.error(f"Error toggling fullscreen: {e}")
+                    elif back_btn.handle_event(event):
+                        current_state = MENU
+            
+            elif current_state == LEADERBOARD:
+                back_btn = show_leaderboard()
+                
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        return
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE:
+                            current_state = MENU
+                    
+                    back_btn.handle_event(event)
+                    
+                    if back_btn.handle_event(event):
+                        current_state = MENU
+            
+            elif current_state == GAME_OVER:
+                continue_btn = show_game_over_screen()
+                
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        return
+                    elif event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE or event.key == pg.K_RETURN:
+                            current_state = MENU
+                    
+                    continue_btn.handle_event(event)
+                    
+                    if continue_btn.handle_event(event):
+                        current_state = MENU
+            
+            pg.display.flip()
+            clock.tick(60)
             
     except Exception as e:
-        logging.error(f"Error showing game over screen: {e}")
+        logging.error(f"Error in main loop: {e}")
+        logging.error(traceback.format_exc())
+    finally:
+        try:
+            pg.quit()
+            logging.info("Game shut down successfully")
+        except:
+            pass
 
 # Main execution
 if __name__ == "__main__":
     try:
         logging.info("Starting Bottle Ops game")
-        clean_exit = safe_game_loop()
-        show_game_over_screen(clean_exit)
+        main()
         
     except Exception as e:
         logging.error(f"Fatal error: {e}")
