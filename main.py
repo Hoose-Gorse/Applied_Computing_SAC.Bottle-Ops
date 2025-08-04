@@ -67,7 +67,7 @@ try:
     font = load_font(None, 48)
     
     # Player constants
-    player_width, player_height = 50, 60
+    player_width, player_height = 80, 100  # Increased from 50, 60
     player_x = SCREEN_WIDTH // 2
     player_speed = 6
     vel_y = 0
@@ -82,6 +82,7 @@ try:
     
     # Drunk guy
     drunk_width = 60
+    drunk_height = 80
     drunk_x = SCREEN_WIDTH // 2
     drunk_speed = 3
     drunk_direction = 1
@@ -89,6 +90,7 @@ try:
     
     # Game state
     lives = 9
+    start_time = pg.time.get_ticks()  # Track game start time
     bottle_spawn_time = 1000
     last_bottle_time = pg.time.get_ticks()
     bottles = []
@@ -123,9 +125,9 @@ class Bottle:
             else:
                 self.dx = self.dy = 0
             
-            # Visual properties
-            self.base_width = 8
-            self.base_height = 24
+            # Visual properties (smaller bottles)
+            self.base_width = 6  # Reduced from 8
+            self.base_height = 18  # Reduced from 24
             self.rotation = 0
             self.rotation_speed = random.uniform(3, 8)
             
@@ -155,8 +157,18 @@ class Bottle:
             # Update rotation
             self.rotation = (self.rotation + self.rotation_speed) % 360
             
-            # Remove bottle if it has reached or passed the target z
+            # Remove bottle if it has reached target z OR is off-screen
             if self.z >= self.target_z:
+                return True
+            
+            # Check if bottle is completely off-screen (accounting for large size)
+            scale_factor = (self.z ** 1.8) * 20
+            scale_factor = max(scale_factor, 0.1)
+            max_size = max(self.base_width, self.base_height) * scale_factor
+            
+            # Remove if bottle center is way off screen (considering its large size)
+            if (self.x + max_size < -100 or self.x - max_size > SCREEN_WIDTH + 100 or
+                self.y + max_size < -100 or self.y - max_size > SCREEN_HEIGHT + 100):
                 return True
                 
             return False
@@ -171,11 +183,10 @@ class Bottle:
             if not self.active or self.z <= 0:
                 return
             
-            # Calculate size based on z-position (enhanced 3D perspective effect)
-            # More dramatic scaling: bottles start very small and grow much larger
+            # Calculate size based on z-position (unlimited scaling for continuous growth)
+            # Exponential growth that continues indefinitely
             scale_factor = (self.z ** 1.8) * 20  # Exponential growth for dramatic effect
-            scale_factor = min(scale_factor, 5.0)  # Cap at 5x original size
-            scale_factor = max(scale_factor, 0.1)  # Minimum size when far away
+            scale_factor = max(scale_factor, 0.1)  # Only minimum size when far away
             
             current_width = max(int(self.base_width * scale_factor), 1)
             current_height = max(int(self.base_height * scale_factor), 1)
@@ -192,7 +203,7 @@ class Bottle:
             # Position the bottle
             rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
             
-            # Clamp to screen bounds to prevent drawing errors
+            # Only draw if on screen (bottles continue growing beyond screen bounds)
             if (rect.right > 0 and rect.left < SCREEN_WIDTH and 
                 rect.bottom > 0 and rect.top < SCREEN_HEIGHT):
                 surface.blit(rotated_image, rect.topleft)
@@ -208,31 +219,45 @@ class Bottle:
         except:
             return False
 
+    def is_at_player_position(self):
+        """Check if bottle has reached the player's z-position (ground level)"""
+        try:
+            return self.active and self.z >= 0.95  # Very close to player's position
+        except:
+            return False
+
     def get_collision_rect(self):
-        """Get collision rectangle with error handling"""
+        """Get collision rectangle that's 20% smaller than visual representation"""
         try:
             if not self.active:
                 return pg.Rect(0, 0, 0, 0)
             
-            # Use same scaling logic as drawing for consistent collision
+            # Use exact same scaling and rotation logic as the visual drawing
             scale_factor = (self.z ** 1.8) * 20
-            scale_factor = min(scale_factor, 5.0)
             scale_factor = max(scale_factor, 0.1)
             
-            size = max(int(max(self.base_width, self.base_height) * scale_factor), 1)
+            current_width = max(int(self.base_width * scale_factor), 1)
+            current_height = max(int(self.base_height * scale_factor), 1)
+            
+            # Make hitbox 20% smaller than visual representation
+            hitbox_width = max(int(current_width * 0.8), 1)
+            hitbox_height = max(int(current_height * 0.8), 1)
+            
+            # Center the smaller hitbox at the same position as the visual bottle
             return pg.Rect(
-                int(self.x - size // 2), 
-                int(self.y - size // 2), 
-                size, 
-                size
+                int(self.x - hitbox_width // 2),
+                int(self.y - hitbox_height // 2),
+                hitbox_width,
+                hitbox_height
             )
+            
         except Exception as e:
             logging.error(f"Error getting collision rect: {e}")
             return pg.Rect(0, 0, 0, 0)
 
 def safe_game_loop():
     """Main game loop with comprehensive error handling"""
-    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, last_bottle_time, bottles
+    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, last_bottle_time, bottles, start_time
     
     running = True
     frame_count = 0
@@ -284,7 +309,7 @@ def safe_game_loop():
                         drunk_direction *= -1
                         drunk_x = max(0, min(drunk_x, SCREEN_WIDTH - drunk_width))
                     
-                    drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, 20)
+                    drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
                     pg.draw.rect(screen, BLUE, drunk_rect)
                 except Exception as e:
                     logging.error(f"Error with drunk guy: {e}")
@@ -296,7 +321,7 @@ def safe_game_loop():
                         # Always target the player's base position (ground level)
                         new_bottle = Bottle(
                             drunk_x + drunk_width // 2,  # Start at drunk guy
-                            drunk_y + 30,
+                            drunk_y + drunk_height,  # Start at bottom of drunk guy
                             player_x + player_width // 2,  # Target player's current x
                             player_base_y + player_height // 2  # Target base y position
                         )
@@ -316,8 +341,9 @@ def safe_game_loop():
                             else:
                                 bottle.draw(screen)
                                 
-                                # Collision detection
+                                # Collision detection - only if bottle is at player's z-level
                                 if (bottle.can_hit_player() and 
+                                    bottle.is_at_player_position() and
                                     player_rect.colliderect(bottle.get_collision_rect())):
                                     lives -= 1
                                     bottles_to_remove.append(i)
@@ -341,13 +367,18 @@ def safe_game_loop():
                 
                 # HUD
                 try:
+                    # Lives on top-left
                     life_text = font.render(f"Lives: {lives}", True, GREEN)
                     screen.blit(life_text, (20, 20))
                     
-                    # Debug info (remove in production)
-                    if frame_count % 60 == 0:  # Every second
-                        debug_text = font.render(f"Bottles: {len(bottles)}", True, WHITE)
-                        screen.blit(debug_text, (20, 70))
+                    # Time survived on top-right
+                    current_time = pg.time.get_ticks()
+                    time_survived = (current_time - start_time) // 1000  # Convert to seconds
+                    minutes = time_survived // 60
+                    seconds = time_survived % 60
+                    time_text = font.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
+                    time_rect = time_text.get_rect()
+                    screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - 20, 20))
                         
                 except Exception as e:
                     logging.error(f"Error drawing HUD: {e}")
