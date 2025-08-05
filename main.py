@@ -644,6 +644,30 @@ def show_settings():
     back_button.draw(screen)
     
     return fs_button, back_button
+def recalculate_scrollbar():
+    """Recalculates the scrollbar dimensions and creates a new instance"""
+    global scrollbar
+
+    all_scores = leaderboard.get_all_scores()
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+
+    scores_start_y = int(SCREEN_HEIGHT * 0.25)
+    scores_end_y = int(SCREEN_HEIGHT * 0.75)
+    scores_area_height = scores_end_y - scores_start_y
+    scrollbar_width = int(20 * scale_x)
+    scrollbar_x = SCREEN_WIDTH - int(40 * scale_x)
+    scrollbar_y = scores_start_y
+    scrollbar_height = scores_area_height - int(40 * scale_y)
+
+    scrollbar = ScrollBar(
+        scrollbar_x,
+        scrollbar_y,
+        scrollbar_width,
+        scrollbar_height,
+        len(all_scores),
+        max_visible_scores
+    )
 
 def show_leaderboard():
     """Display the leaderboard with visual scrollbar"""
@@ -668,6 +692,16 @@ def show_leaderboard():
     scores_start_y = int(SCREEN_HEIGHT * 0.25)  # Start below title
     scores_end_y = int(SCREEN_HEIGHT * 0.75)    # End above buttons
     scores_area_height = scores_end_y - scores_start_y
+
+    # Draw outline around the scores area
+    box_margin = int(10 * scale_y)  # Add some padding around the scores
+    box_x = int(SCREEN_WIDTH * 0.1)
+    box_width = SCREEN_WIDTH - 2 * box_x
+    box_y = scores_start_y - box_margin
+    box_height = scores_area_height + 2 * box_margin
+
+    outline_rect = pg.Rect(box_x, box_y, box_width, box_height)
+    pg.draw.rect(screen, GRAY, outline_rect, 3)
     
     # Create or update scrollbar
     scrollbar_width = int(20 * scale_x)
@@ -675,19 +709,10 @@ def show_leaderboard():
     scrollbar_y = scores_start_y
     scrollbar_height = scores_area_height - int(40 * scale_y)  # Leave space for scroll info
     
-    # Initialize scrollbar if needed
-    if 'scrollbar' not in globals() or scrollbar.total_items != len(all_scores):
-        scrollbar = ScrollBar(scrollbar_x, scrollbar_y, scrollbar_width, scrollbar_height, 
-                             len(all_scores), max_visible_scores)
+    recalculate_scrollbar()
     
     # Update scrollbar scroll position
     scrollbar.set_scroll_position(leaderboard_scroll)
-    
-    # Show scroll info if needed
-    if len(all_scores) > max_visible_scores:
-        scroll_info = font_small.render(f"Showing {leaderboard_scroll + 1}-{min(leaderboard_scroll + max_visible_scores, len(all_scores))} of {len(all_scores)} scores", True, GRAY)
-        scroll_rect = scroll_info.get_rect(center=(SCREEN_WIDTH // 2, scores_start_y - int(20 * scale_y)))
-        screen.blit(scroll_info, scroll_rect)
     
     # Display visible scores
     visible_scores = all_scores[leaderboard_scroll:leaderboard_scroll + max_visible_scores]
@@ -1093,7 +1118,7 @@ def main():
                     current_state = GAME_OVER
             
             elif current_state == SETTINGS:
-                fs_btn, back_btn = show_settings()
+                fs_btn, back_btn = show_settings()  
                 
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
@@ -1125,6 +1150,31 @@ def main():
                             # Update fonts and scaled values for new screen size
                             font_large, font_medium, font_small = get_scaled_fonts()
                             get_scaled_values()
+
+                            recalculate_scrollbar()
+
+                            # 🔧 Recreate scrollbar with updated dimensions for both fullscreen and windowed mode
+                            if 'scrollbar' in globals():
+                                all_scores = leaderboard.get_all_scores()
+                                scale_x = SCREEN_WIDTH / BASE_WIDTH
+                                scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+
+                                scores_start_y = int(SCREEN_HEIGHT * 0.25)
+                                scores_end_y = int(SCREEN_HEIGHT * 0.75)
+                                scores_area_height = scores_end_y - scores_start_y
+                                scrollbar_width = int(20 * scale_x)
+                                scrollbar_x = SCREEN_WIDTH - int(40 * scale_x)
+                                scrollbar_y = scores_start_y
+                                scrollbar_height = scores_area_height - int(40 * scale_y)
+
+                                scrollbar = ScrollBar(
+                                    scrollbar_x,
+                                    scrollbar_y,
+                                    scrollbar_width,
+                                    scrollbar_height,
+                                    len(all_scores),
+                                    max_visible_scores
+                                )
                             
                         except Exception as e:
                             logging.error(f"Error toggling fullscreen: {e}")
