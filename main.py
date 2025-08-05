@@ -72,8 +72,15 @@ try:
     SCREEN_WIDTH = BASE_WIDTH
     SCREEN_HEIGHT = BASE_HEIGHT
     
+    # Game settings
+    is_fullscreen = False  # Start in windowed mode
+    
     # Create windowed display (not fullscreen)
-    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    if is_fullscreen:
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
+    else:
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
+    
     pg.display.set_caption("Bottle Ops")
     logging.info(f"Quarter-screen display created: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
     
@@ -107,9 +114,6 @@ try:
     
     # Initialize fonts
     font_large, font_medium, font_small = get_scaled_fonts()
-    
-    # Game settings
-    is_fullscreen = False  # Start in windowed mode
     
     # Base dimensions and speeds (proportional to BASE_WIDTH/BASE_HEIGHT)
     def get_scaled_values():
@@ -1108,7 +1112,8 @@ def safe_game_loop():
 def main():
     """Main game function with menu system"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
-    
+    global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small
+
     last_window_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
     
     leaderboard = LeaderboardManager()
@@ -1193,7 +1198,10 @@ def main():
                                         is_fullscreen = False
                                         SCREEN_WIDTH = BASE_WIDTH
                                         SCREEN_HEIGHT = BASE_HEIGHT
-                                        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                                        if is_fullscreen:
+                                            screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
+                                        else:
+                                            screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
                                         font_large, font_medium, font_small = get_scaled_fonts()
                                         get_scaled_values()
                                         recalculate_scrollbar()
@@ -1227,8 +1235,6 @@ def main():
                     if fs_btn.handle_event(event):
                         # Toggle fullscreen
                         try:
-                            global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small
-                            
                             is_fullscreen = not is_fullscreen
                             if is_fullscreen:
                                 SCREEN_WIDTH = FULL_WIDTH
@@ -1238,7 +1244,10 @@ def main():
                             else:
                                 SCREEN_WIDTH = BASE_WIDTH
                                 SCREEN_HEIGHT = BASE_HEIGHT
-                                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                                if is_fullscreen:
+                                    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
+                                else:
+                                    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
                                 logging.info("Switched to windowed mode")
                             
                             # Update fonts and scaled values for new screen size
@@ -1353,4 +1362,3 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
-
