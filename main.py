@@ -6,6 +6,9 @@ import traceback
 import json
 import os
 
+cursor_timer = 0
+cursor_visible = True
+
 # Configure logging for error handling
 logging.basicConfig(
     level=logging.INFO,
@@ -641,9 +644,9 @@ def show_settings():
         "BACK", 
         font_medium
     )
-    back_button.draw(screen)
-    
+    back_button.draw(screen)    
     return fs_button, back_button
+
 def recalculate_scrollbar():
     """Recalculates the scrollbar dimensions and creates a new instance"""
     global scrollbar
@@ -790,40 +793,67 @@ def show_leaderboard():
     return clear_button, back_button, scrollbar
 
 def show_username_input():
-    """Display username input screen"""
+    global cursor_timer, cursor_visible
     screen.fill(BLACK)
-    
+
     # Title
     title_text = font_large.render("ENTER USERNAME", True, WHITE)
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
     screen.blit(title_text, title_rect)
-    
-    # Dynamic scaling
+
     scale_x = SCREEN_WIDTH / BASE_WIDTH
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
-    
-    # Input box - scaled proportionally
+
     input_box = pg.Rect(
-        SCREEN_WIDTH // 2 - int(150 * scale_x), 
-        SCREEN_HEIGHT // 2 - int(20 * scale_y), 
-        int(300 * scale_x), 
+        SCREEN_WIDTH // 2 - int(150 * scale_x),
+        SCREEN_HEIGHT // 2 - int(20 * scale_y),
+        int(300 * scale_x),
         int(40 * scale_y)
     )
+
     color = WHITE if input_active else GRAY
     pg.draw.rect(screen, color, input_box, 3)
-    
-    # Username text - rendered with scaled font and positioned proportionally
+
+    # Cursor
+    cursor_timer += 1
+    if cursor_timer >= 30:
+        cursor_timer = 0
+        cursor_visible = not cursor_visible
+
     username_surface = font_medium.render(current_username, True, WHITE)
     text_x = input_box.x + int(10 * scale_x)
     text_y = input_box.y + int(10 * scale_y)
     screen.blit(username_surface, (text_x, text_y))
-    
-    # Instructions - scaled positioning
+
+    if input_active and cursor_visible:
+        cursor_x = text_x + username_surface.get_width() + 2
+        cursor_y = text_y
+        cursor_height = font_medium.get_height()
+        pg.draw.line(screen, WHITE, (cursor_x, cursor_y), (cursor_x, cursor_y + cursor_height), 2)
+
+    # Instruction text
     inst_text = font_small.render("Press ENTER to continue", True, GRAY)
     inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + int(40 * scale_y)))
     screen.blit(inst_text, inst_rect)
-    
-    return input_box
+
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+
+    button_width = int(100 * scale_x)
+    button_height = int(40 * scale_y)
+    button_x = SCREEN_WIDTH - button_width - int(20 * scale_x)
+    button_y = SCREEN_HEIGHT - button_height - int(20 * scale_y)
+
+    back_button = Button(
+        button_x,
+        button_y,
+        button_width,
+        button_height,
+        "BACK",
+        font_small
+    )
+    back_button.draw(screen)
+    return input_box, back_button
 
 def show_game_over_screen():
     """Display game over screen"""
@@ -1020,16 +1050,38 @@ def safe_game_loop():
                 except Exception as e:
                     logging.error(f"Error drawing HUD: {e}")
                 
-                # Event handling
+                scale_x = SCREEN_WIDTH / BASE_WIDTH
+                scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+
+                button_width = int(100 * scale_x)
+                button_height = int(40 * scale_y)
+                button_x = SCREEN_WIDTH - button_width - int(20 * scale_x)
+                button_y = SCREEN_HEIGHT - button_height - int(20 * scale_y)
+
+                back_button = Button(
+                    button_x,
+                    button_y,
+                    button_width,
+                    button_height,
+                    "BACK",
+                    font_small
+                )
+                back_button.draw(screen)
+                
+                # 📦 Event handling
                 try:
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
                             logging.info("User quit game")
-                            return -1  # Special return code for quit
+                            return -1
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
                                 logging.info("User pressed escape")
-                                return -1  # Return to menu
+                                return -1
+                        elif event.type == pg.MOUSEBUTTONDOWN:
+                            if back_button.handle_event(event):
+                                logging.info("Back button clicked during gameplay")
+                                return -1
                 except Exception as e:
                     logging.error(f"Error handling events: {e}")
                 
@@ -1043,6 +1095,7 @@ def safe_game_loop():
             except Exception as e:
                 logging.error(f"Error in main game loop: {e}")
                 continue
+            
                 
     except KeyboardInterrupt:
         logging.info("Game interrupted by user")
@@ -1088,7 +1141,7 @@ def main():
                         return
             
             elif current_state == USERNAME_INPUT:
-                input_box = show_username_input()
+                input_box, back_button = show_username_input()
                 
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
@@ -1107,7 +1160,9 @@ def main():
                                 current_username += event.unicode
                     elif event.type == pg.MOUSEBUTTONDOWN:
                         input_active = input_box.collidepoint(event.pos)
-            
+                        if back_button.handle_event(event):
+                            current_state = MENU
+
             elif current_state == PLAYING:
                 survival_time = safe_game_loop()
                 if survival_time == -1:  # User quit or escaped
@@ -1230,6 +1285,7 @@ def main():
             
             pg.display.flip()
             clock.tick(60)
+            
             
     except Exception as e:
         logging.error(f"Error in main loop: {e}")
