@@ -1109,6 +1109,8 @@ def main():
     """Main game function with menu system"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
     
+    last_window_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
+    
     leaderboard = LeaderboardManager()
     
     try:
@@ -1162,6 +1164,43 @@ def main():
                         input_active = input_box.collidepoint(event.pos)
                         if back_button.handle_event(event):
                             current_state = MENU
+                    elif event.type == pg.VIDEORESIZE:
+                        new_width, new_height = event.w, event.h
+
+                        # Check if the window was maximized (fullscreen-like)
+                        if (new_width, new_height) != last_window_size:
+                            last_window_size = (new_width, new_height)
+
+                            # Consider anything close to desktop size as a maximize
+                            if abs(new_width - FULL_WIDTH) < 20 and abs(new_height - FULL_HEIGHT) < 20:
+                                if not is_fullscreen:
+                                    # Simulate in-game fullscreen toggle
+                                    try:
+                                        is_fullscreen = True
+                                        SCREEN_WIDTH = FULL_WIDTH
+                                        SCREEN_HEIGHT = FULL_HEIGHT
+                                        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
+                                        font_large, font_medium, font_small = get_scaled_fonts()
+                                        get_scaled_values()
+                                        recalculate_scrollbar()
+                                        logging.info("Switched to fullscreen via maximize")
+                                    except Exception as e:
+                                        logging.error(f"Error switching to fullscreen via maximize: {e}")
+                            else:
+                                # Revert to windowed mode
+                                if is_fullscreen:
+                                    try:
+                                        is_fullscreen = False
+                                        SCREEN_WIDTH = BASE_WIDTH
+                                        SCREEN_HEIGHT = BASE_HEIGHT
+                                        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                                        font_large, font_medium, font_small = get_scaled_fonts()
+                                        get_scaled_values()
+                                        recalculate_scrollbar()
+                                        logging.info("Reverted to windowed mode from maximize")
+                                    except Exception as e:
+                                        logging.error(f"Error reverting to windowed via resize: {e}")
+
 
             elif current_state == PLAYING:
                 survival_time = safe_game_loop()
@@ -1314,3 +1353,4 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
+
