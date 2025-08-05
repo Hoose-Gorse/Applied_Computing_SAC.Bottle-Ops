@@ -1139,7 +1139,7 @@ def main():
                             if is_fullscreen:
                                 SCREEN_WIDTH = FULL_WIDTH
                                 SCREEN_HEIGHT = FULL_HEIGHT
-                                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
+                                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
                                 logging.info("Switched to fullscreen mode")
                             else:
                                 SCREEN_WIDTH = BASE_WIDTH
