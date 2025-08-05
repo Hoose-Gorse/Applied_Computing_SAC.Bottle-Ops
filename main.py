@@ -56,13 +56,23 @@ if not safe_init():
 try:
     clock = pg.time.Clock()
     
-    # Get screen dimensions and create fullscreen display
+    # Get full screen info for reference
     info = pg.display.Info()
-    SCREEN_WIDTH = info.current_w
-    SCREEN_HEIGHT = info.current_h
-    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
+    FULL_WIDTH = info.current_w
+    FULL_HEIGHT = info.current_h
+    
+    # Base dimensions (quarter screen for windowed mode)
+    BASE_WIDTH = FULL_WIDTH // 2
+    BASE_HEIGHT = FULL_HEIGHT // 2
+    
+    # Current screen dimensions (will change with fullscreen toggle)
+    SCREEN_WIDTH = BASE_WIDTH
+    SCREEN_HEIGHT = BASE_HEIGHT
+    
+    # Create windowed display (not fullscreen)
+    screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption("Bottle Ops")
-    logging.info(f"Fullscreen display created: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+    logging.info(f"Quarter-screen display created: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
     
     # Colors
     WHITE = (255, 255, 255)
@@ -73,43 +83,72 @@ try:
     GRAY = (128, 128, 128)
     DARK_GRAY = (64, 64, 64)
     YELLOW = (255, 255, 0)
+    LIGHT_GRAY = (200, 200, 200)
     
-    # Safe font loading
-    font_large = load_font(None, 72)
-    font_medium = load_font(None, 48)
-    font_small = load_font(None, 36)
+    # Base font sizes (for quarter screen)
+    base_font_large = 48
+    base_font_medium = 32
+    base_font_small = 24
+    
+    # Dynamic font loading function
+    def get_scaled_fonts():
+        scale_x = SCREEN_WIDTH / BASE_WIDTH
+        scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+        scale = min(scale_x, scale_y)  # Use smaller scale to maintain proportions
+        
+        return (
+            load_font(None, int(base_font_large * scale)),
+            load_font(None, int(base_font_medium * scale)),
+            load_font(None, int(base_font_small * scale))
+        )
+    
+    # Initialize fonts
+    font_large, font_medium, font_small = get_scaled_fonts()
     
     # Game settings
-    is_fullscreen = True
+    is_fullscreen = False  # Start in windowed mode
     
-    # Player constants with depth
-    player_width, player_height = 80, 100
-    player_x = SCREEN_WIDTH // 2
-    player_speed = 6
-    vel_y = 0
-    gravity = 0.5
-    jump_power = -12
-    is_on_ground = False
+    # Base dimensions and speeds (proportional to BASE_WIDTH/BASE_HEIGHT)
+    def get_scaled_values():
+        global player_width, player_height, player_x, player_speed, vel_y, gravity, jump_power
+        global ground_level, player_base_y, player_y, drunk_width, drunk_height, drunk_x, drunk_speed, drunk_y
+        
+        scale_x = SCREEN_WIDTH / BASE_WIDTH
+        scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+        
+        # Player constants - scaled proportionally
+        player_width = int(60 * scale_x)
+        player_height = int(75 * scale_y)
+        player_x = SCREEN_WIDTH // 2 - player_width // 2
+        player_speed = int(5 * scale_x)
+        vel_y = 0
+        gravity = 0.5 * scale_y
+        jump_power = -12 * scale_y
+        
+        # Ground and player positioning
+        ground_level = SCREEN_HEIGHT - int(40 * scale_y)
+        player_base_y = ground_level - player_height
+        player_y = player_base_y
+        
+        # Drunk guy - scaled proportionally
+        drunk_width = int(45 * scale_x)
+        drunk_height = int(60 * scale_y)
+        drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2
+        drunk_speed = int(2 * scale_x)
+        drunk_y = int(80 * scale_y)
     
-    # Player depth properties - moved closer to drunk guy
-    player_z_ground_start = 0.4  # Player z-space when on ground (0.4 to 0.6) - 2x closer
+    # Initialize scaled values
+    get_scaled_values()
+    
+    # Player depth properties (these remain constant as they're ratios)
+    player_z_ground_start = 0.4  # Player z-space when on ground (0.4 to 0.6)
     player_z_ground_end = 0.6
-    player_z_air_start = 0.2     # Player z-space when jumping (0.2 to 0.4) - 2x closer  
+    player_z_air_start = 0.2     # Player z-space when jumping (0.2 to 0.4)
     player_z_air_end = 0.4
     player_collision_depth = 0.2  # Always 0.2 units of depth
     
-    # Ground and player positioning
-    ground_level = SCREEN_HEIGHT - 50
-    player_base_y = ground_level - player_height
-    player_y = player_base_y
-    
-    # Drunk guy
-    drunk_width = 60
-    drunk_height = 80
-    drunk_x = SCREEN_WIDTH // 2
-    drunk_speed = 3
+    is_on_ground = False
     drunk_direction = 1
-    drunk_y = 100
     
     # Game state
     lives = 9
@@ -117,6 +156,12 @@ try:
     bottle_spawn_time = 1000
     last_bottle_time = pg.time.get_ticks()
     bottles = []
+    
+    # Leaderboard scrolling
+    leaderboard_scroll = 0
+    max_visible_scores = 8  # How many scores to show at once
+    scrollbar_dragging = False
+    scroll_drag_offset = 0
     
     # Game states
     MENU = 0
@@ -165,12 +210,131 @@ class LeaderboardManager:
         """Add a new score to the leaderboard"""
         self.scores.append({'username': username, 'score': score})
         self.scores.sort(key=lambda x: x['score'], reverse=True)
-        self.scores = self.scores[:10]  # Keep only top 10
+        # No longer limiting to top 10 - keep all scores
         self.save_scores()
+    
+    def get_all_scores(self):
+        """Get all scores"""
+        return self.scores
     
     def get_top_scores(self, limit=10):
         """Get top scores"""
         return self.scores[:limit]
+    
+    def clear_all_scores(self):
+        """Clear all scores from leaderboard"""
+        self.scores = []
+        self.save_scores()
+        logging.info("Leaderboard cleared")
+
+class ScrollBar:
+    def __init__(self, x, y, width, height, total_items, visible_items):
+        self.rect = pg.Rect(x, y, width, height)
+        self.total_items = total_items
+        self.visible_items = visible_items
+        self.scroll_position = 0
+        self.dragging = False
+        self.drag_offset = 0
+        
+        # Calculate thumb properties
+        self.update_thumb()
+    
+    def update_thumb(self):
+        """Update thumb size and position based on scroll state"""
+        if self.total_items <= self.visible_items:
+            # No scrolling needed - hide scrollbar
+            self.thumb_height = 0
+            self.thumb_y = self.rect.y
+            self.max_scroll = 0
+        else:
+            # Calculate thumb size as proportion of visible area
+            scroll_ratio = self.visible_items / self.total_items
+            self.thumb_height = max(20, int(self.rect.height * scroll_ratio))
+            
+            # Calculate maximum scroll positions
+            self.max_scroll = self.total_items - self.visible_items
+            self.max_thumb_y = self.rect.bottom - self.thumb_height
+            
+            # Calculate thumb position based on scroll
+            if self.max_scroll > 0:
+                scroll_progress = self.scroll_position / self.max_scroll
+                self.thumb_y = self.rect.y + int((self.rect.height - self.thumb_height) * scroll_progress)
+            else:
+                self.thumb_y = self.rect.y
+    
+    def get_thumb_rect(self):
+        """Get the rectangle for the scroll thumb"""
+        return pg.Rect(self.rect.x, self.thumb_y, self.rect.width, self.thumb_height)
+    
+    def handle_event(self, event):
+        """Handle mouse events for scrollbar interaction"""
+        if self.thumb_height == 0:  # No scrolling needed
+            return False
+            
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                mouse_x, mouse_y = event.pos
+                thumb_rect = self.get_thumb_rect()
+                
+                if thumb_rect.collidepoint(mouse_x, mouse_y):
+                    # Start dragging thumb
+                    self.dragging = True
+                    self.drag_offset = mouse_y - self.thumb_y
+                    return True
+                elif self.rect.collidepoint(mouse_x, mouse_y):
+                    # Click on track - jump to position
+                    relative_y = mouse_y - self.rect.y
+                    track_height = self.rect.height - self.thumb_height
+                    
+                    if track_height > 0:
+                        scroll_progress = relative_y / self.rect.height
+                        new_scroll = int(scroll_progress * self.total_items)
+                        self.scroll_position = max(0, min(self.max_scroll, new_scroll))
+                        self.update_thumb()
+                        return True
+        
+        elif event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1:
+                self.dragging = False
+                return self.dragging  # Return previous state
+        
+        elif event.type == pg.MOUSEMOTION:
+            if self.dragging:
+                mouse_y = event.pos[1]
+                new_thumb_y = mouse_y - self.drag_offset
+                
+                # Constrain thumb to track
+                new_thumb_y = max(self.rect.y, min(self.max_thumb_y, new_thumb_y))
+                
+                # Calculate scroll position from thumb position
+                if self.max_thumb_y > self.rect.y:
+                    scroll_progress = (new_thumb_y - self.rect.y) / (self.max_thumb_y - self.rect.y)
+                    self.scroll_position = int(scroll_progress * self.max_scroll)
+                    self.scroll_position = max(0, min(self.max_scroll, self.scroll_position))
+                    self.update_thumb()
+                    return True
+        
+        return False
+    
+    def set_scroll_position(self, position):
+        """Set scroll position directly"""
+        self.scroll_position = max(0, min(self.max_scroll, position))
+        self.update_thumb()
+    
+    def draw(self, surface):
+        """Draw the scrollbar"""
+        if self.thumb_height == 0:  # No scrolling needed
+            return
+            
+        # Draw track
+        pg.draw.rect(surface, DARK_GRAY, self.rect)
+        pg.draw.rect(surface, GRAY, self.rect, 2)
+        
+        # Draw thumb
+        thumb_rect = self.get_thumb_rect()
+        thumb_color = LIGHT_GRAY if not self.dragging else WHITE
+        pg.draw.rect(surface, thumb_color, thumb_rect)
+        pg.draw.rect(surface, GRAY, thumb_rect, 1)
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=YELLOW):
@@ -201,6 +365,10 @@ class Button:
 class Bottle:
     def __init__(self, start_x, start_y, target_x, target_y):
         try:
+            # Get current scaling factors
+            scale_x = SCREEN_WIDTH / BASE_WIDTH
+            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+            
             self.start_x = start_x
             self.start_y = start_y
             self.x = start_x
@@ -223,9 +391,9 @@ class Bottle:
             else:
                 self.dx = self.dy = 0
             
-            # Visual properties
-            self.base_width = 6
-            self.base_height = 18
+            # Visual properties - scaled dynamically
+            self.base_width = max(1, int(5 * scale_x))
+            self.base_height = max(1, int(15 * scale_y))
             self.rotation = 0
             self.rotation_speed = random.uniform(3, 8)
             
@@ -261,7 +429,7 @@ class Bottle:
                 return True
             
             # Check if bottle is completely off-screen
-            scale_factor = (self.z ** 1.8) * 20
+            scale_factor = (self.z ** 1.8) * 15  # Adjusted scaling for smaller screen
             scale_factor = max(scale_factor, 0.1)
             max_size = max(self.base_width, self.base_height) * scale_factor
             
@@ -281,8 +449,8 @@ class Bottle:
             if not self.active or self.z <= 0:
                 return
             
-            # Calculate size based on z-position
-            scale_factor = (self.z ** 1.8) * 20
+            # Calculate size based on z-position - scaled dynamically
+            scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
             scale_factor = max(scale_factor, 0.1)
             
             current_width = max(int(self.base_width * scale_factor), 1)
@@ -332,7 +500,7 @@ class Bottle:
                 return pg.Rect(0, 0, 0, 0)
             
             # Use exact same scaling logic as visual drawing
-            scale_factor = (self.z ** 1.8) * 20
+            scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
             scale_factor = max(scale_factor, 0.1)
             
             current_width = max(int(self.base_width * scale_factor), 1)
@@ -393,11 +561,14 @@ def reset_game():
     """Reset all game variables for a new game"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, start_time, last_bottle_time, bottles
     
-    player_x = SCREEN_WIDTH // 2
+    # Recalculate scaled values in case screen size changed
+    get_scaled_values()
+    
+    player_x = SCREEN_WIDTH // 2 - player_width // 2
     player_y = player_base_y
     vel_y = 0
     is_on_ground = False
-    drunk_x = SCREEN_WIDTH // 2
+    drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2
     drunk_direction = 1
     lives = 9
     start_time = pg.time.get_ticks()
@@ -413,15 +584,21 @@ def show_menu():
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
     screen.blit(title_text, title_rect)
     
-    # Buttons
-    button_width = 300
-    button_height = 60
+    # Buttons - dynamically scaled
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    
+    button_width = int(200 * scale_x)
+    button_height = int(40 * scale_y)
     button_x = SCREEN_WIDTH // 2 - button_width // 2
     
-    play_button = Button(button_x, SCREEN_HEIGHT // 2 - 100, button_width, button_height, "PLAY", font_medium)
-    settings_button = Button(button_x, SCREEN_HEIGHT // 2 - 20, button_width, button_height, "SETTINGS", font_medium)
-    leaderboard_button = Button(button_x, SCREEN_HEIGHT // 2 + 60, button_width, button_height, "LEADERBOARD", font_medium)
-    exit_button = Button(button_x, SCREEN_HEIGHT // 2 + 140, button_width, button_height, "EXIT", font_medium)
+    spacing = int(50 * scale_y)
+    start_y = SCREEN_HEIGHT // 2 - int(80 * scale_y)
+    
+    play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium)
+    settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium)
+    leaderboard_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "LEADERBOARD", font_medium)
+    exit_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "EXIT", font_medium)
     
     play_button.draw(screen)
     settings_button.draw(screen)
@@ -439,19 +616,39 @@ def show_settings():
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
     screen.blit(title_text, title_rect)
     
-    # Fullscreen toggle
+    # Dynamic scaling
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    
+    # Fullscreen toggle - scaled proportionally
     fullscreen_text = "Fullscreen: ON" if is_fullscreen else "Fullscreen: OFF"
-    fs_button = Button(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 50, 400, 60, fullscreen_text, font_medium)
+    fs_button = Button(
+        SCREEN_WIDTH // 2 - int(150 * scale_x), 
+        SCREEN_HEIGHT // 2 - int(30 * scale_y), 
+        int(300 * scale_x), 
+        int(40 * scale_y), 
+        fullscreen_text, 
+        font_medium
+    )
     fs_button.draw(screen)
     
-    # Back button
-    back_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 + 50, 300, 60, "BACK", font_medium)
+    # Back button - scaled proportionally
+    back_button = Button(
+        SCREEN_WIDTH // 2 - int(100 * scale_x), 
+        SCREEN_HEIGHT // 2 + int(30 * scale_y), 
+        int(200 * scale_x), 
+        int(40 * scale_y), 
+        "BACK", 
+        font_medium
+    )
     back_button.draw(screen)
     
     return fs_button, back_button
 
 def show_leaderboard():
-    """Display the leaderboard"""
+    """Display the leaderboard with visual scrollbar"""
+    global leaderboard_scroll, max_visible_scores, scrollbar
+    
     screen.fill(BLACK)
     
     # Title
@@ -459,29 +656,113 @@ def show_leaderboard():
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 6))
     screen.blit(title_text, title_rect)
     
-    # Get scores
-    scores = leaderboard.get_top_scores()
+    # Get all scores
+    all_scores = leaderboard.get_all_scores()
     
-    # Display scores
-    y_offset = SCREEN_HEIGHT // 4
-    for i, score_data in enumerate(scores):
+    # Dynamic scaling
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    line_spacing = int(30 * scale_y)
+    
+    # Define scores display area
+    scores_start_y = int(SCREEN_HEIGHT * 0.25)  # Start below title
+    scores_end_y = int(SCREEN_HEIGHT * 0.75)    # End above buttons
+    scores_area_height = scores_end_y - scores_start_y
+    
+    # Create or update scrollbar
+    scrollbar_width = int(20 * scale_x)
+    scrollbar_x = SCREEN_WIDTH - int(40 * scale_x)
+    scrollbar_y = scores_start_y
+    scrollbar_height = scores_area_height - int(40 * scale_y)  # Leave space for scroll info
+    
+    # Initialize scrollbar if needed
+    if 'scrollbar' not in globals() or scrollbar.total_items != len(all_scores):
+        scrollbar = ScrollBar(scrollbar_x, scrollbar_y, scrollbar_width, scrollbar_height, 
+                             len(all_scores), max_visible_scores)
+    
+    # Update scrollbar scroll position
+    scrollbar.set_scroll_position(leaderboard_scroll)
+    
+    # Show scroll info if needed
+    if len(all_scores) > max_visible_scores:
+        scroll_info = font_small.render(f"Showing {leaderboard_scroll + 1}-{min(leaderboard_scroll + max_visible_scores, len(all_scores))} of {len(all_scores)} scores", True, GRAY)
+        scroll_rect = scroll_info.get_rect(center=(SCREEN_WIDTH // 2, scores_start_y - int(20 * scale_y)))
+        screen.blit(scroll_info, scroll_rect)
+    
+    # Display visible scores
+    visible_scores = all_scores[leaderboard_scroll:leaderboard_scroll + max_visible_scores]
+    
+    for i, score_data in enumerate(visible_scores):
         username = score_data['username']
         score = score_data['score']
         minutes = score // 60
         seconds = score % 60
         
-        rank_text = f"{i+1}. {username} - {minutes:02d}:{seconds:02d}"
-        color = YELLOW if i == 0 else WHITE
+        # Actual rank in full leaderboard
+        actual_rank = leaderboard_scroll + i + 1
+        rank_text = f"{actual_rank}. {username} - {minutes:02d}:{seconds:02d}"
+        
+        # Highlight top 3 scores
+        if actual_rank == 1:
+            color = YELLOW  # Gold for 1st
+        elif actual_rank == 2:
+            color = (192, 192, 192)  # Silver for 2nd
+        elif actual_rank == 3:
+            color = (205, 127, 50)   # Bronze for 3rd
+        else:
+            color = WHITE
         
         score_surface = font_small.render(rank_text, True, color)
-        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2, y_offset + i * 40))
-        screen.blit(score_surface, score_rect)
+        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2 - scrollbar_width, scores_start_y + i * line_spacing))
+        
+        # Only draw if within the scores area
+        if score_rect.bottom <= scores_end_y:
+            screen.blit(score_surface, score_rect)
     
-    # Back button
-    back_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT - 150, 300, 60, "BACK", font_medium)
+    # Empty leaderboard message
+    if len(all_scores) == 0:
+        empty_text = font_medium.render("No scores yet!", True, GRAY)
+        empty_rect = empty_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.blit(empty_text, empty_rect)
+    
+    # Draw scrollbar
+    if len(all_scores) > max_visible_scores:
+        scrollbar.draw(screen)
+    
+    # Buttons at bottom - scaled proportionally
+    button_width = int(120 * scale_x)
+    button_height = int(40 * scale_y)
+    button_spacing = int(140 * scale_x)
+    
+    # Center the buttons
+    total_button_width = button_width * 2 + button_spacing
+    start_x = (SCREEN_WIDTH - total_button_width) // 2
+    button_y = SCREEN_HEIGHT - int(60 * scale_y)
+    
+    clear_button = Button(
+        start_x,
+        button_y,
+        button_width,
+        button_height,
+        "CLEAR",
+        font_medium,
+        color=RED,
+        hover_color=YELLOW
+    )
+    
+    back_button = Button(
+        start_x + button_width + button_spacing,
+        button_y,
+        button_width,
+        button_height,
+        "BACK",
+        font_medium
+    )
+    
+    clear_button.draw(screen)
     back_button.draw(screen)
     
-    return back_button
+    return clear_button, back_button, scrollbar
 
 def show_username_input():
     """Display username input screen"""
@@ -492,18 +773,29 @@ def show_username_input():
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
     screen.blit(title_text, title_rect)
     
-    # Input box
-    input_box = pg.Rect(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 30, 400, 60)
+    # Dynamic scaling
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    
+    # Input box - scaled proportionally
+    input_box = pg.Rect(
+        SCREEN_WIDTH // 2 - int(150 * scale_x), 
+        SCREEN_HEIGHT // 2 - int(20 * scale_y), 
+        int(300 * scale_x), 
+        int(40 * scale_y)
+    )
     color = WHITE if input_active else GRAY
     pg.draw.rect(screen, color, input_box, 3)
     
-    # Username text
+    # Username text - rendered with scaled font and positioned proportionally
     username_surface = font_medium.render(current_username, True, WHITE)
-    screen.blit(username_surface, (input_box.x + 10, input_box.y + 15))
+    text_x = input_box.x + int(10 * scale_x)
+    text_y = input_box.y + int(10 * scale_y)
+    screen.blit(username_surface, (text_x, text_y))
     
-    # Instructions
+    # Instructions - scaled positioning
     inst_text = font_small.render("Press ENTER to continue", True, GRAY)
-    inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
+    inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + int(40 * scale_y)))
     screen.blit(inst_text, inst_rect)
     
     return input_box
@@ -524,8 +816,17 @@ def show_game_over_screen():
     score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(score_text, score_rect)
     
-    # Continue button
-    continue_button = Button(SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 + 80, 300, 60, "CONTINUE", font_medium)
+    # Continue button - scaled proportionally
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    continue_button = Button(
+        SCREEN_WIDTH // 2 - int(100 * scale_x), 
+        SCREEN_HEIGHT // 2 + int(50 * scale_y), 
+        int(200 * scale_x), 
+        int(40 * scale_y), 
+        "CONTINUE", 
+        font_medium
+    )
     continue_button.draw(screen)
     
     return continue_button
@@ -674,19 +975,22 @@ def safe_game_loop():
                 except Exception as e:
                     logging.error(f"Error drawing player: {e}")
                 
-                # HUD
+                # HUD - scaled proportionally
                 try:
-                    # Lives on top-left
-                    life_text = font_medium.render(f"Lives: {lives}", True, GREEN)
-                    screen.blit(life_text, (20, 20))
+                    scale_x = SCREEN_WIDTH / BASE_WIDTH
+                    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
                     
-                    # Time survived on top-right
+                    # Lives on top-left - scaled positioning
+                    life_text = font_small.render(f"Lives: {lives}", True, GREEN)
+                    screen.blit(life_text, (int(15 * scale_x), int(15 * scale_y)))
+                    
+                    # Time survived on top-right - scaled positioning
                     time_survived = (current_time - start_time) // 1000
                     minutes = time_survived // 60
                     seconds = time_survived % 60
-                    time_text = font_medium.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
+                    time_text = font_small.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
                     time_rect = time_text.get_rect()
-                    screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - 20, 20))
+                    screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - int(15 * scale_x), int(15 * scale_y)))
                         
                 except Exception as e:
                     logging.error(f"Error drawing HUD: {e}")
@@ -725,7 +1029,7 @@ def safe_game_loop():
 
 def main():
     """Main game function with menu system"""
-    global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard
+    global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
     
     leaderboard = LeaderboardManager()
     
@@ -804,20 +1108,31 @@ def main():
                     if fs_btn.handle_event(event):
                         # Toggle fullscreen
                         try:
+                            global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small
+                            
                             is_fullscreen = not is_fullscreen
                             if is_fullscreen:
+                                SCREEN_WIDTH = FULL_WIDTH
+                                SCREEN_HEIGHT = FULL_HEIGHT
                                 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
                                 logging.info("Switched to fullscreen mode")
                             else:
-                                screen = pg.display.set_mode((1280, 720))
+                                SCREEN_WIDTH = BASE_WIDTH
+                                SCREEN_HEIGHT = BASE_HEIGHT
+                                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
                                 logging.info("Switched to windowed mode")
+                            
+                            # Update fonts and scaled values for new screen size
+                            font_large, font_medium, font_small = get_scaled_fonts()
+                            get_scaled_values()
+                            
                         except Exception as e:
                             logging.error(f"Error toggling fullscreen: {e}")
                     elif back_btn.handle_event(event):
                         current_state = MENU
             
             elif current_state == LEADERBOARD:
-                back_btn = show_leaderboard()
+                clear_btn, back_btn, scrollbar = show_leaderboard()
                 
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
@@ -826,9 +1141,26 @@ def main():
                         if event.key == pg.K_ESCAPE:
                             current_state = MENU
                     
+                    # Handle scrollbar events first
+                    if scrollbar.handle_event(event):
+                        leaderboard_scroll = scrollbar.scroll_position
+                    
+                    # Handle button events
+                    clear_btn.handle_event(event)
                     back_btn.handle_event(event)
                     
-                    if back_btn.handle_event(event):
+                    if clear_btn.handle_event(event):
+                        # Clear leaderboard with confirmation
+                        if len(leaderboard.get_all_scores()) > 0:
+                            leaderboard.clear_all_scores()
+                            leaderboard_scroll = 0  # Reset scroll position
+                            # Recreate scrollbar for new empty list
+                            scrollbar = ScrollBar(scrollbar.rect.x, scrollbar.rect.y, 
+                                                scrollbar.rect.width, scrollbar.rect.height,
+                                                0, max_visible_scores)
+                            logging.info("Leaderboard cleared by user")
+                    elif back_btn.handle_event(event):
+                        leaderboard_scroll = 0  # Reset scroll when leaving
                         current_state = MENU
             
             elif current_state == GAME_OVER:
