@@ -50,15 +50,20 @@ def load_font(font_name, size):
 
 def update_screen_dimensions(new_width, new_height):
     """Update all screen-dependent variables when screen size changes"""
-    global SCREEN_WIDTH, SCREEN_HEIGHT, screen, font_large, font_medium, font_small
+    global SCREEN_WIDTH, SCREEN_HEIGHT, WINDOWED_WIDTH, WINDOWED_HEIGHT, screen, font_large, font_medium, font_small
     global is_fullscreen
     
     SCREEN_WIDTH = new_width
     SCREEN_HEIGHT = new_height
     
+    # If we're not in fullscreen, also update the windowed dimensions
+    if not is_fullscreen:
+        WINDOWED_WIDTH = new_width
+        WINDOWED_HEIGHT = new_height
+    
     # Update the display mode
     if is_fullscreen:
-        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
     else:
         screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
     
@@ -73,6 +78,47 @@ def update_screen_dimensions(new_width, new_height):
         recalculate_scrollbar()
     
     logging.info(f"Screen dimensions updated to: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+
+def toggle_fullscreen():
+    """Toggle fullscreen mode safely"""
+    global is_fullscreen, screen, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOWED_WIDTH, WINDOWED_HEIGHT
+    global font_large, font_medium, font_small
+    
+    try:
+        if is_fullscreen:
+            # Switch to windowed mode - restore previous windowed size
+            is_fullscreen = False
+            SCREEN_WIDTH = WINDOWED_WIDTH
+            SCREEN_HEIGHT = WINDOWED_HEIGHT
+            screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
+            logging.info(f"Switched to windowed mode: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+        else:
+            # Switch to fullscreen mode - save current windowed size first
+            WINDOWED_WIDTH = SCREEN_WIDTH
+            WINDOWED_HEIGHT = SCREEN_HEIGHT
+            is_fullscreen = True
+            SCREEN_WIDTH = FULL_WIDTH
+            SCREEN_HEIGHT = FULL_HEIGHT
+            screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN)
+            logging.info(f"Switched to fullscreen mode: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+        
+        # Update fonts for new screen size
+        font_large, font_medium, font_small = get_scaled_fonts()
+        
+        # Update all scaled game values
+        get_scaled_values()
+        
+        # Update scrollbar if it exists
+        if 'scrollbar' in globals():
+            recalculate_scrollbar()
+            
+        return True
+        
+    except Exception as e:
+        logging.error(f"Error toggling fullscreen: {e}")
+        # Revert the fullscreen flag if we failed
+        is_fullscreen = not is_fullscreen
+        return False
 
 # Safe initialization
 if not safe_init():
@@ -93,6 +139,10 @@ try:
     # Current screen dimensions (will change with window resizing)
     SCREEN_WIDTH = BASE_WIDTH
     SCREEN_HEIGHT = BASE_HEIGHT
+    
+    # Store the windowed mode dimensions separately from current dimensions
+    WINDOWED_WIDTH = BASE_WIDTH
+    WINDOWED_HEIGHT = BASE_HEIGHT
     
     # Game settings
     is_fullscreen = False  # Start in windowed mode
@@ -380,10 +430,15 @@ class Button:
     def handle_event(self, event):
         if event.type == pg.MOUSEMOTION:
             self.is_hovered = self.rect.collidepoint(event.pos)
+            return False  # Don't consume the event, just update hover state
         elif event.type == pg.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(event.pos):
                 return True
         return False
+    
+    def update_hover(self, mouse_pos):
+        """Update hover state based on mouse position"""
+        self.is_hovered = self.rect.collidepoint(mouse_pos)
     
     def draw(self, surface):
         color = self.hover_color if self.is_hovered else self.color
@@ -625,6 +680,13 @@ def show_menu():
     leaderboard_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "LEADERBOARD", font_medium)
     exit_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "EXIT", font_medium)
     
+    # Update hover states for all buttons
+    mouse_pos = pg.mouse.get_pos()
+    play_button.update_hover(mouse_pos)
+    settings_button.update_hover(mouse_pos)
+    leaderboard_button.update_hover(mouse_pos)
+    exit_button.update_hover(mouse_pos)
+    
     play_button.draw(screen)
     settings_button.draw(screen)
     leaderboard_button.draw(screen)
@@ -655,7 +717,6 @@ def show_settings():
         fullscreen_text, 
         font_medium
     )
-    fs_button.draw(screen)
     
     # Back button - scaled proportionally
     back_button = Button(
@@ -666,6 +727,13 @@ def show_settings():
         "BACK", 
         font_medium
     )
+    
+    # Update hover states
+    mouse_pos = pg.mouse.get_pos()
+    fs_button.update_hover(mouse_pos)
+    back_button.update_hover(mouse_pos)
+    
+    fs_button.draw(screen)
     back_button.draw(screen)    
     return fs_button, back_button
 
@@ -809,6 +877,11 @@ def show_leaderboard():
         font_medium
     )
     
+    # Update hover states
+    mouse_pos = pg.mouse.get_pos()
+    clear_button.update_hover(mouse_pos)
+    back_button.update_hover(mouse_pos)
+    
     clear_button.draw(screen)
     back_button.draw(screen)
     
@@ -874,6 +947,11 @@ def show_username_input():
         "BACK",
         font_small
     )
+    
+    # Update hover state
+    mouse_pos = pg.mouse.get_pos()
+    back_button.update_hover(mouse_pos)
+    
     back_button.draw(screen)
     return input_box, back_button
 
@@ -904,6 +982,11 @@ def show_game_over_screen():
         "CONTINUE", 
         font_medium
     )
+    
+    # Update hover state
+    mouse_pos = pg.mouse.get_pos()
+    continue_button.update_hover(mouse_pos)
+    
     continue_button.draw(screen)
     
     return continue_button
@@ -1085,6 +1168,11 @@ def safe_game_loop():
             "BACK",
             font_small
         )
+        
+        # Update hover state for back button
+        mouse_pos = pg.mouse.get_pos()
+        back_button.update_hover(mouse_pos)
+        
         back_button.draw(screen)
         
         # Event handling
@@ -1144,12 +1232,7 @@ def main():
                         if event.key == pg.K_ESCAPE:
                             return
                     
-                    # Handle button clicks
-                    play_btn.handle_event(event)
-                    settings_btn.handle_event(event)
-                    leaderboard_btn.handle_event(event)
-                    exit_btn.handle_event(event)
-                    
+                    # Handle button clicks - don't double call handle_event
                     if play_btn.handle_event(event):
                         current_state = USERNAME_INPUT
                         input_active = True
@@ -1202,22 +1285,10 @@ def main():
                         if event.key == pg.K_ESCAPE:
                             current_state = MENU
                     
-                    fs_btn.handle_event(event)
-                    back_btn.handle_event(event)
-                    
                     if fs_btn.handle_event(event):
-                        # Toggle fullscreen
-                        try:
-                            is_fullscreen = not is_fullscreen
-                            if is_fullscreen:
-                                update_screen_dimensions(FULL_WIDTH, FULL_HEIGHT)
-                                logging.info("Switched to fullscreen mode")
-                            else:
-                                update_screen_dimensions(BASE_WIDTH, BASE_HEIGHT)
-                                logging.info("Switched to windowed mode")
-                            
-                        except Exception as e:
-                            logging.error(f"Error toggling fullscreen: {e}")
+                        # Toggle fullscreen using the new safe method
+                        if not toggle_fullscreen():
+                            logging.warning("Failed to toggle fullscreen mode")
                     elif back_btn.handle_event(event):
                         current_state = MENU
             
@@ -1236,9 +1307,6 @@ def main():
                         leaderboard_scroll = scrollbar.scroll_position
                     
                     # Handle button events
-                    clear_btn.handle_event(event)
-                    back_btn.handle_event(event)
-                    
                     if clear_btn.handle_event(event):
                         # Clear leaderboard with confirmation
                         if len(leaderboard.get_all_scores()) > 0:
@@ -1262,8 +1330,6 @@ def main():
                     elif event.type == pg.KEYDOWN:
                         if event.key == pg.K_ESCAPE or event.key == pg.K_RETURN:
                             current_state = MENU
-                    
-                    continue_btn.handle_event(event)
                     
                     if continue_btn.handle_event(event):
                         current_state = MENU
