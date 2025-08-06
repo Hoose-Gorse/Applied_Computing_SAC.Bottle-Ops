@@ -864,8 +864,8 @@ def show_leaderboard():
         button_height,
         "CLEAR",
         font_medium,
-        color=RED,
-        hover_color=YELLOW
+        color=YELLOW,
+        hover_color=RED
     )
     
     back_button = Button(
@@ -1257,7 +1257,11 @@ def main():
                                 reset_game()
                                 current_state = PLAYING
                         elif event.key == pg.K_BACKSPACE:
-                            current_username = current_username[:-1]
+                            mods = pg.key.get_mods()
+                            if mods & pg.KMOD_CTRL:
+                                current_username = ""
+                            else:
+                                current_username = current_username[:-1]
                         else:
                             if len(current_username) < 15 and event.unicode.isprintable():
                                 current_username += event.unicode
