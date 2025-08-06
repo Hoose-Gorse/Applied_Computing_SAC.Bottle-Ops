@@ -710,9 +710,9 @@ def show_settings():
     # Fullscreen toggle - scaled proportionally
     fullscreen_text = "Fullscreen: ON" if is_fullscreen else "Fullscreen: OFF"
     fs_button = Button(
-        SCREEN_WIDTH // 2 - max(100, int(150 * scale_x)), 
+        SCREEN_WIDTH // 2 - max(80, int(100 * scale_x)), 
         SCREEN_HEIGHT // 2 - max(20, int(30 * scale_y)), 
-        max(200, int(300 * scale_x)), 
+        max(160, int(200 * scale_x)), 
         max(30, int(40 * scale_y)), 
         fullscreen_text, 
         font_medium
