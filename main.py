@@ -2,12 +2,8 @@ import pygame as pg
 import random
 from sys import exit
 import logging
-import traceback
 import json
 import os
-
-cursor_timer = 0
-cursor_visible = True 
 
 # Configure logging for error handling
 logging.basicConfig(
@@ -139,7 +135,7 @@ try:
             load_font(None, max(8, int(base_font_small * scale)))
         )
     
-    # Initialize fonts
+    # Initialize fonts 
     font_large, font_medium, font_small = get_scaled_fonts()
     
     # Base dimensions and speeds (proportional to BASE_WIDTH/BASE_HEIGHT)
@@ -165,11 +161,10 @@ try:
         player_base_y = ground_level - player_height
         player_y = player_base_y
         
-        # Drunk guy - scaled proportionally
+        # Drunk guy - scaled proportionally (no movement needed)
         drunk_width = max(8, int(45 * scale_x))
         drunk_height = max(8, int(60 * scale_y))
-        drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2
-        drunk_speed = max(1, int(2 * scale_x))
+        drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2  # Center horizontally
         drunk_y = max(10, int(80 * scale_y))
     
     # Initialize scaled values
@@ -183,7 +178,6 @@ try:
     player_collision_depth = 0.2  # Always 0.2 units of depth
     
     is_on_ground = False
-    drunk_direction = 1
     
     # Game state
     lives = 9
@@ -191,6 +185,9 @@ try:
     bottle_spawn_time = 1000
     last_bottle_time = pg.time.get_ticks()
     bottles = []
+    next_bottle_preview = None  # Preview bottle that will be thrown
+    next_bottle_show_time = 0   # When the preview bottle was shown
+    next_bottle_throw_delay = 1000  # 1 second delay before throwing
     
     # Leaderboard scrolling
     leaderboard_scroll = 0
@@ -372,7 +369,7 @@ class ScrollBar:
         pg.draw.rect(surface, GRAY, thumb_rect, 1)
 
 class Button:
-    def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=YELLOW):
+    def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=BLUE):
         self.rect = pg.Rect(x, y, width, height)
         self.text = text
         self.font = font
@@ -398,204 +395,195 @@ class Button:
         surface.blit(text_surface, text_rect)
 
 class Bottle:
-    def __init__(self, start_x, start_y, target_x, target_y):
-        try:
-            # Get current scaling factors
-            scale_x = SCREEN_WIDTH / BASE_WIDTH
-            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
-            
-            self.start_x = start_x
-            self.start_y = start_y
-            self.x = start_x
-            self.y = start_y
-            
-            # Target is always the player's base position (ground level)
+    def __init__(self, start_x, start_y, target_x, target_y, bottle_type="ground"):
+        # Get current scaling factors
+        scale_x = SCREEN_WIDTH / BASE_WIDTH
+        scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+        
+        self.start_x = start_x
+        self.start_y = start_y
+        self.x = start_x
+        self.y = start_y
+        
+        # Bottle type determines target z-plane and color
+        self.bottle_type = bottle_type  # "ground" or "air"
+        
+        # Target positioning based on bottle type
+        if bottle_type == "air":
+            # Air bottles target the jumping z-plane
+            self.target_x = target_x
+            self.target_y = target_y - max(30, int(50 * scale_y))  # Higher target for jump bottles
+            self.target_z = (player_z_air_start + player_z_air_end) / 2  # Middle of air z-plane
+            self.color = BLUE  # Blue for air bottles
+        else:
+            # Ground bottles target the ground z-plane
             self.target_x = target_x
             self.target_y = target_y
-            
-            # Z-axis properties for enhanced 3D effect
-            self.z = 0.01  # Start far away
-            self.target_z = 0.7  # Stop just past the player's ground position (0.4-0.6)
-            self.z_speed = 0.008  # Adjusted speed for the new distance
-            
-            # Calculate movement per frame
-            self.total_frames = int((self.target_z - self.z) / self.z_speed)
-            if self.total_frames > 0:
-                self.dx = (self.target_x - self.start_x) / self.total_frames
-                self.dy = (self.target_y - self.start_y) / self.total_frames
-            else:
-                self.dx = self.dy = 0
-            
-            # Visual properties - scaled dynamically
-            self.base_width = max(1, int(5 * scale_x))
-            self.base_height = max(1, int(15 * scale_y))
-            self.rotation = 0
-            self.rotation_speed = random.uniform(3, 8)
-            
-            # Create bottle surface
-            self.original_image = pg.Surface((self.base_width, self.base_height), pg.SRCALPHA)
-            self.original_image.fill(RED)
-            
-            self.active = True
-            self.hit_player = False  # Track if bottle hit player
-            
-        except Exception as e:
-            logging.error(f"Failed to create bottle: {e}")
-            self.active = False
+            self.target_z = (player_z_ground_start + player_z_ground_end) / 2  # Middle of ground z-plane
+            self.color = RED  # Red for ground bottles
+        
+        # Z-axis properties for enhanced 3D effect
+        self.z = 0.01  # Start far away
+        self.z_speed = 0.008  # Adjusted speed for the new distance
+        
+        # Calculate movement per frame
+        self.total_frames = int((self.target_z - self.z) / self.z_speed)
+        if self.total_frames > 0:
+            self.dx = (self.target_x - self.start_x) / self.total_frames
+            self.dy = (self.target_y - self.start_y) / self.total_frames
+        else:
+            self.dx = self.dy = 0
+        
+        # Visual properties - scaled dynamically
+        self.base_width = max(1, int(5 * scale_x))
+        self.base_height = max(1, int(15 * scale_y))
+        self.rotation = 0
+        self.rotation_speed = random.uniform(3, 8)
+        
+        # Create bottle surface with appropriate color
+        self.original_image = pg.Surface((self.base_width, self.base_height), pg.SRCALPHA)
+        self.original_image.fill(self.color)
+        
+        self.active = True
+        self.hit_player = False  # Track if bottle hit player
 
     def update(self):
-        """Update bottle position and state with error handling"""
-        try:
-            if not self.active:
-                return True
-            
-            # Move along z-axis (simulating depth)
-            self.z += self.z_speed
-            
-            # Move towards target position
-            self.x += self.dx
-            self.y += self.dy
-            
-            # Update rotation
-            self.rotation = (self.rotation + self.rotation_speed) % 360
-            
-            # Remove bottle if it has gone past the target z
-            if self.z >= self.target_z:
-                return True
-            
-            # Check if bottle is completely off-screen
-            scale_factor = (self.z ** 1.8) * 15  # Adjusted scaling for current screen
-            scale_factor = max(scale_factor, 0.1)
-            max_size = max(self.base_width, self.base_height) * scale_factor
-            
-            if (self.x + max_size < -100 or self.x - max_size > SCREEN_WIDTH + 100 or
-                self.y + max_size < -100 or self.y - max_size > SCREEN_HEIGHT + 100):
-                return True
-                
-            return False
-            
-        except Exception as e:
-            logging.error(f"Error updating bottle: {e}")
+        """Update bottle position and state"""
+        if not self.active:
             return True
+        
+        # Move along z-axis (simulating depth)
+        self.z += self.z_speed
+        
+        # Move towards target position
+        self.x += self.dx
+        self.y += self.dy
+        
+        # Update rotation
+        self.rotation = (self.rotation + self.rotation_speed) % 360
+        
+        # Remove bottle if it has gone past the target z
+        if self.z >= self.target_z + 0.1:  # Small buffer past target
+            return True
+        
+        # Check if bottle is completely off-screen
+        scale_factor = (self.z ** 1.8) * 15  # Adjusted scaling for current screen
+        scale_factor = max(scale_factor, 0.1)
+        max_size = max(self.base_width, self.base_height) * scale_factor
+        
+        if (self.x + max_size < -100 or self.x - max_size > SCREEN_WIDTH + 100 or
+            self.y + max_size < -100 or self.y - max_size > SCREEN_HEIGHT + 100):
+            return True
+            
+        return False
 
     def draw(self, surface):
-        """Draw bottle with perspective scaling and error handling"""
-        try:
-            if not self.active or self.z <= 0:
-                return
-            
-            # Calculate size based on z-position - scaled dynamically
-            scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
-            scale_factor = max(scale_factor, 0.1)
-            
-            current_width = max(int(self.base_width * scale_factor), 1)
-            current_height = max(int(self.base_height * scale_factor), 1)
-            
-            # Scale the original image
-            scaled_image = pg.transform.scale(
-                self.original_image, 
-                (current_width, current_height)
-            )
-            
-            # Rotate the scaled image
-            rotated_image = pg.transform.rotate(scaled_image, self.rotation)
-            
-            # Position the bottle
-            rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
-            
-            # Only draw if on screen
-            if (rect.right > 0 and rect.left < SCREEN_WIDTH and 
-                rect.bottom > 0 and rect.top < SCREEN_HEIGHT):
-                surface.blit(rotated_image, rect.topleft)
-                
-        except Exception as e:
-            logging.error(f"Error drawing bottle: {e}")
-            self.active = False
+        """Draw bottle with perspective scaling"""
+        if not self.active or self.z <= 0:
+            return
+        
+        # Calculate size based on z-position - scaled dynamically
+        scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        scale_factor = max(scale_factor, 0.1)
+        
+        current_width = max(int(self.base_width * scale_factor), 1)
+        current_height = max(int(self.base_height * scale_factor), 1)
+        
+        # Scale the original image
+        scaled_image = pg.transform.scale(
+            self.original_image, 
+            (current_width, current_height)
+        )
+        
+        # Rotate the scaled image
+        rotated_image = pg.transform.rotate(scaled_image, self.rotation)
+        
+        # Position the bottle
+        rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
+        
+        # Only draw if on screen
+        if (rect.right > 0 and rect.left < SCREEN_WIDTH and 
+            rect.bottom > 0 and rect.top < SCREEN_HEIGHT):
+            surface.blit(rotated_image, rect.topleft)
 
     def is_in_player_collision_zone(self, player_is_jumping):
         """Check if bottle is within the player's current depth collision zone"""
-        try:
-            if not self.active:
-                return False
-            
-            # Player has different z-positions when jumping vs on ground
-            if player_is_jumping:
-                return (self.z >= player_z_air_start and 
-                        self.z <= player_z_air_end)
-            else:
-                return (self.z >= player_z_ground_start and 
-                        self.z <= player_z_ground_end)
-        except:
+        if not self.active:
             return False
+        
+        # Only check collision if bottle type matches player state
+        if self.bottle_type == "air" and not player_is_jumping:
+            return False  # Air bottles can't hit grounded player
+        elif self.bottle_type == "ground" and player_is_jumping:
+            return False  # Ground bottles can't hit jumping player
+        
+        # Player has different z-positions when jumping vs on ground
+        if player_is_jumping and self.bottle_type == "air":
+            return (self.z >= player_z_air_start and 
+                    self.z <= player_z_air_end)
+        elif not player_is_jumping and self.bottle_type == "ground":
+            return (self.z >= player_z_ground_start and 
+                    self.z <= player_z_ground_end)
+        
+        return False
 
     def get_collision_rect(self, player_is_jumping):
         """Get collision rectangle for bottles in the player's depth zone"""
-        try:
-            if not self.active or not self.is_in_player_collision_zone(player_is_jumping):
-                return pg.Rect(0, 0, 0, 0)
-            
-            # Use exact same scaling logic as visual drawing
-            scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
-            scale_factor = max(scale_factor, 0.1)
-            
-            current_width = max(int(self.base_width * scale_factor), 1)
-            current_height = max(int(self.base_height * scale_factor), 1)
-            
-            # Make hitbox 20% smaller than visual representation
-            hitbox_width = max(int(current_width * 0.8), 1)
-            hitbox_height = max(int(current_height * 0.8), 1)
-            
-            # Center the smaller hitbox at the same position as the visual bottle
-            return pg.Rect(
-                int(self.x - hitbox_width // 2),
-                int(self.y - hitbox_height // 2),
-                hitbox_width,
-                hitbox_height
-            )
-            
-        except Exception as e:
-            logging.error(f"Error getting collision rect: {e}")
+        if not self.active or not self.is_in_player_collision_zone(player_is_jumping):
             return pg.Rect(0, 0, 0, 0)
+        
+        # Use exact same scaling logic as visual drawing
+        scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        scale_factor = max(scale_factor, 0.1)
+        
+        current_width = max(int(self.base_width * scale_factor), 1)
+        current_height = max(int(self.base_height * scale_factor), 1)
+        
+        # Make hitbox 20% smaller than visual representation
+        hitbox_width = max(int(current_width * 0.8), 1)
+        hitbox_height = max(int(current_height * 0.8), 1)
+        
+        # Center the smaller hitbox at the same position as the visual bottle
+        return pg.Rect(
+            int(self.x - hitbox_width // 2),
+            int(self.y - hitbox_height // 2),
+            hitbox_width,
+            hitbox_height
+        )
 
 def draw_player_with_depth(surface, x, y, width, height, is_jumping):
     """Draw player with visual depth representation based on jumping state"""
-    try:
-        if is_jumping:
-            # When jumping, player appears "behind" ground-level bottles
-            # Use lighter colors to show they're in the background
-            main_color = (200, 200, 200)  # Lighter white
-            shadow_color = (100, 100, 100)  # Lighter gray
-            shadow_offset = max(1, int(2 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))  # Smaller shadow when in back
-        else:
-            # When on ground, player appears "in front" 
-            main_color = WHITE
-            shadow_color = GRAY
-            shadow_offset = max(2, int(3 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))
-        
-        # Main player body
-        player_rect = pg.Rect(int(x), int(y), width, height)
-        
-        # Add depth shadow/outline
-        shadow_rect = pg.Rect(int(x + shadow_offset), int(y + shadow_offset), width, height)
-        pg.draw.rect(surface, shadow_color, shadow_rect)
-        
-        # Draw main body on top
-        pg.draw.rect(surface, main_color, player_rect)
-        
-        # Add depth indicator lines
-        line_width = max(1, int(2 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))
-        pg.draw.line(surface, shadow_color, (int(x), int(y)), (int(x + shadow_offset), int(y + shadow_offset)), line_width)
-        pg.draw.line(surface, shadow_color, (int(x + width), int(y)), (int(x + width + shadow_offset), int(y + shadow_offset)), line_width)
-        
-    except Exception as e:
-        logging.error(f"Error drawing player with depth: {e}")
-        # Fallback to simple rectangle
-        player_rect = pg.Rect(int(x), int(y), width, height)
-        pg.draw.rect(surface, WHITE, player_rect)
+    if is_jumping:
+        # When jumping, player appears "behind" ground-level bottles
+        # Use lighter colors to show they're in the background
+        main_color = (200, 200, 200)  # Lighter white
+        shadow_color = (100, 100, 100)  # Lighter gray
+        shadow_offset = max(1, int(2 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))  # Smaller shadow when in back
+    else:
+        # When on ground, player appears "in front" 
+        main_color = WHITE
+        shadow_color = GRAY
+        shadow_offset = max(2, int(3 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))
+    
+    # Main player body
+    player_rect = pg.Rect(int(x), int(y), width, height)
+    
+    # Add depth shadow/outline
+    shadow_rect = pg.Rect(int(x + shadow_offset), int(y + shadow_offset), width, height)
+    pg.draw.rect(surface, shadow_color, shadow_rect)
+    
+    # Draw main body on top
+    pg.draw.rect(surface, main_color, player_rect)
+    
+    # Add depth indicator lines
+    line_width = max(1, int(2 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)))
+    pg.draw.line(surface, shadow_color, (int(x), int(y)), (int(x + shadow_offset), int(y + shadow_offset)), line_width)
+    pg.draw.line(surface, shadow_color, (int(x + width), int(y)), (int(x + width + shadow_offset), int(y + shadow_offset)), line_width)
 
 def reset_game():
     """Reset all game variables for a new game"""
-    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, start_time, last_bottle_time, bottles
+    global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, start_time, last_bottle_time, bottles
+    global next_bottle_preview, next_bottle_show_time
     
     # Recalculate scaled values in case screen size changed
     get_scaled_values()
@@ -604,12 +592,13 @@ def reset_game():
     player_y = player_base_y
     vel_y = 0
     is_on_ground = False
-    drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2
-    drunk_direction = 1
+    drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2  # Drunk guy stays centered
     lives = 9
     start_time = pg.time.get_ticks()
     last_bottle_time = pg.time.get_ticks()
     bottles = []
+    next_bottle_preview = None
+    next_bottle_show_time = 0
 
 def show_menu():
     """Display the main menu"""
@@ -825,6 +814,9 @@ def show_leaderboard():
     
     return clear_button, back_button, scrollbar
 
+cursor_timer = 0
+cursor_visible = True 
+
 def show_username_input():
     global cursor_timer, cursor_visible
     screen.fill(BLACK)
@@ -917,230 +909,209 @@ def show_game_over_screen():
     return continue_button
 
 def safe_game_loop():
-    """Main game loop with comprehensive error handling"""
-    global player_x, player_y, vel_y, is_on_ground, drunk_x, drunk_direction, lives, last_bottle_time, bottles, start_time, screen
+    """Main game loop with minimal error handling"""
+    global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
+    global next_bottle_preview, next_bottle_show_time
     
     running = True
     frame_count = 0
     
-    try:
-        while running:
-            frame_count += 1
-            current_time = pg.time.get_ticks()
+    while running:
+        frame_count += 1
+        current_time = pg.time.get_ticks()
+        
+        screen.fill(BLACK)
+        keys = pg.key.get_pressed()
+        
+        # Player movement - no error handling needed for basic movement
+        if keys[pg.K_LEFT] or keys[pg.K_a]:
+            player_x = max(0, player_x - player_speed)
+        if keys[pg.K_RIGHT] or keys[pg.K_d]:
+            player_x = min(SCREEN_WIDTH - player_width, player_x + player_speed)
+        
+        # Jumping
+        if (keys[pg.K_SPACE] or keys[pg.K_w] or keys[pg.K_UP]) and is_on_ground:
+            vel_y = jump_power
+            is_on_ground = False
+        
+        # Physics
+        vel_y += gravity
+        player_y += vel_y
+        
+        # Ground collision
+        if player_y >= player_base_y:
+            player_y = player_base_y
+            vel_y = 0
+            is_on_ground = True
+        
+        # Drunk guy (stationary) - just draw it
+        drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
+        pg.draw.rect(screen, YELLOW, drunk_rect)
+        
+        # Bottle preview and spawning system
+        if next_bottle_preview is None:
+            # Time to show a new preview bottle
+            if current_time - last_bottle_time > bottle_spawn_time:
+                # 2/3 chance for ground, 1/3 chance for air (twice as likely for ground)
+                bottle_type = random.choices(["ground", "air"], weights=[2, 1])[0]
+                
+                # Create preview bottle (not thrown yet)
+                next_bottle_preview = {
+                    'type': bottle_type,
+                    'color': RED if bottle_type == "ground" else BLUE
+                }
+                next_bottle_show_time = current_time
+        
+        # Draw preview bottle next to drunk guy
+        if next_bottle_preview is not None:
+            # Calculate preview bottle position (next to drunk guy)
+            scale_x = SCREEN_WIDTH / BASE_WIDTH
+            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+            preview_size = max(8, int(12 * min(scale_x, scale_y)))
+            preview_x = drunk_x + drunk_width + max(10, int(15 * scale_x))
+            preview_y = drunk_y + drunk_height // 2 - preview_size // 2
             
-            try:
-                screen.fill(BLACK)
-                keys = pg.key.get_pressed()
-                
-                # Player movement with bounds checking
-                try:
-                    if keys[pg.K_LEFT] or keys[pg.K_a]:
-                        player_x = max(0, player_x - player_speed)
-                    if keys[pg.K_RIGHT] or keys[pg.K_d]:
-                        player_x = min(SCREEN_WIDTH - player_width, player_x + player_speed)
-                    
-                    # Jumping
-                    if (keys[pg.K_SPACE] or keys[pg.K_w] or keys[pg.K_UP]) and is_on_ground:
-                        vel_y = jump_power
-                        is_on_ground = False
-                    
-                    # Physics
-                    vel_y += gravity
-                    player_y += vel_y
-                    
-                    # Ground collision
-                    if player_y >= player_base_y:
-                        player_y = player_base_y
-                        vel_y = 0
-                        is_on_ground = True
-                        
-                except Exception as e:
-                    logging.error(f"Error in player movement: {e}")
-                
-                # Drunk guy movement
-                try:
-                    drunk_x += drunk_speed * drunk_direction
-                    if drunk_x <= 0 or drunk_x >= SCREEN_WIDTH - drunk_width:
-                        drunk_direction *= -1
-                        drunk_x = max(0, min(drunk_x, SCREEN_WIDTH - drunk_width))
-                    
-                    drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
-                    pg.draw.rect(screen, BLUE, drunk_rect)
-                except Exception as e:
-                    logging.error(f"Error with drunk guy: {e}")
-                
-                # Bottle spawning
-                try:
-                    if current_time - last_bottle_time > bottle_spawn_time:
-                        new_bottle = Bottle(
-                            drunk_x + drunk_width // 2,
-                            drunk_y + drunk_height,
-                            player_x + player_width // 2,
-                            player_base_y + player_height // 2
-                        )
-                        if new_bottle.active:
-                            bottles.append(new_bottle)
-                        last_bottle_time = current_time
-                except Exception as e:
-                    logging.error(f"Error spawning bottle: {e}")
-                
-                # Update bottles and separate by layer
-                bottles_to_remove = []
-                bottles_behind = []
-                bottles_in_front = []
-                
-                try:
-                    for i, bottle in enumerate(bottles):
-                        try:
-                            if bottle.update():
-                                bottles_to_remove.append(i)
-                            elif bottle.hit_player:
-                                # Remove bottles that have hit the player
-                                bottles_to_remove.append(i)
-                            else:
-                                # Determine current player z-range based on jumping state
-                                if is_on_ground:
-                                    current_player_z_start = player_z_ground_start
-                                    current_player_z_end = player_z_ground_end
-                                else:
-                                    current_player_z_start = player_z_air_start
-                                    current_player_z_end = player_z_air_end
-                                
-                                # Separate bottles by z-position for proper layering
-                                if bottle.z < current_player_z_start:
-                                    bottles_behind.append(bottle)
-                                elif bottle.z > current_player_z_end:
-                                    bottles_in_front.append(bottle)
-                                else:
-                                    # Bottle is in player's current z-space - potential collision
-                                    bottles_in_front.append(bottle)  # Draw in front for visibility
-                                
-                                # Enhanced collision detection with jumping dodge mechanic
-                                if bottle.is_in_player_collision_zone(not is_on_ground):
-                                    player_rect = pg.Rect(int(player_x), int(player_y), player_width, player_height)
-                                    bottle_collision_rect = bottle.get_collision_rect(not is_on_ground)
-                                    
-                                    if (bottle_collision_rect.width > 0 and bottle_collision_rect.height > 0 and
-                                        player_rect.colliderect(bottle_collision_rect)):
-                                        lives -= 1
-                                        bottle.hit_player = True  # Mark for removal
-                                        bottles_to_remove.append(i)
-                                        jump_status = "jumping" if not is_on_ground else "on ground"
-                                        player_z = f"{current_player_z_start:.1f}-{current_player_z_end:.1f}"
-                                        logging.info(f"Player hit while {jump_status} (z={player_z}) by bottle at z={bottle.z:.3f}! Lives remaining: {lives}")
-                                        
-                                        if lives <= 0:
-                                            logging.info("Game over - no lives remaining")
-                                            return current_time - start_time  # Return survival time
-                                        
-                        except Exception as e:
-                            logging.error(f"Error with bottle {i}: {e}")
-                            bottles_to_remove.append(i)
-                    
-                    # Remove bottles safely (reverse order to maintain indices)
-                    for i in reversed(sorted(set(bottles_to_remove))):
-                        if 0 <= i < len(bottles):
-                            bottles.pop(i)
-                            
-                except Exception as e:
-                    logging.error(f"Error managing bottles: {e}")
-                
-                # Draw ALL bottles first (behind player)
-                try:
-                    for bottle in bottles_behind:
-                        bottle.draw(screen)
-                    for bottle in bottles_in_front:
-                        bottle.draw(screen)
-                except Exception as e:
-                    logging.error(f"Error drawing bottles: {e}")
-                
-                # Draw player LAST - ALWAYS ON TOP OF EVERYTHING
-                try:
-                    draw_player_with_depth(screen, player_x, player_y, player_width, player_height, not is_on_ground)
-                except Exception as e:
-                    logging.error(f"Error drawing player: {e}")
-                
-                # HUD - scaled proportionally
-                try:
-                    scale_x = SCREEN_WIDTH / BASE_WIDTH
-                    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
-                    
-                    # Lives on top-left - scaled positioning
-                    life_text = font_small.render(f"Lives: {lives}", True, GREEN)
-                    screen.blit(life_text, (max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
-                    
-                    # Time survived on top-right - scaled positioning
-                    time_survived = (current_time - start_time) // 1000
-                    minutes = time_survived // 60
-                    seconds = time_survived % 60
-                    time_text = font_small.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
-                    time_rect = time_text.get_rect()
-                    screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
-                        
-                except Exception as e:
-                    logging.error(f"Error drawing HUD: {e}")
-                
-                scale_x = SCREEN_WIDTH / BASE_WIDTH
-                scale_y = SCREEN_HEIGHT / BASE_HEIGHT
-
-                button_width = max(80, int(100 * scale_x))
-                button_height = max(30, int(40 * scale_y))
-                button_x = SCREEN_WIDTH - button_width - max(15, int(20 * scale_x))
-                button_y = SCREEN_HEIGHT - button_height - max(15, int(20 * scale_y))
-
-                back_button = Button(
-                    button_x,
-                    button_y,
-                    button_width,
-                    button_height,
-                    "BACK",
-                    font_small
+            # Draw preview bottle
+            preview_rect = pg.Rect(preview_x, preview_y, preview_size, preview_size)
+            pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
+            
+            # Check if it's time to throw the bottle
+            if current_time - next_bottle_show_time >= next_bottle_throw_delay:
+                # Throw the bottle
+                new_bottle = Bottle(
+                    drunk_x + drunk_width // 2,
+                    drunk_y + drunk_height,
+                    player_x + player_width // 2,
+                    player_base_y + player_height // 2,
+                    next_bottle_preview['type']
                 )
-                back_button.draw(screen)
+                bottles.append(new_bottle)
                 
-                # Event handling
-                try:
-                    for event in pg.event.get():
-                        if event.type == pg.QUIT:
-                            logging.info("User quit game")
-                            return -1
-                        elif event.type == pg.KEYDOWN:
-                            if event.key == pg.K_ESCAPE:
-                                logging.info("User pressed escape")
-                                return -1
-                        elif event.type == pg.MOUSEBUTTONDOWN:
-                            if back_button.handle_event(event):
-                                logging.info("Back button clicked during gameplay")
-                                return -1
-                        elif event.type == pg.VIDEORESIZE:
-                            # Handle window resize
-                            new_width, new_height = event.w, event.h
-                            update_screen_dimensions(new_width, new_height)
-                            # Reset game elements to new screen size
-                            reset_game()
-                            
-                except Exception as e:
-                    logging.error(f"Error handling events: {e}")
+                # Reset for next bottle
+                next_bottle_preview = None
+                last_bottle_time = current_time
+        
+        # Update bottles and separate by layer
+        bottles_to_remove = []
+        bottles_behind = []
+        bottles_in_front = []
+        
+        for i, bottle in enumerate(bottles):
+            if bottle.update():
+                bottles_to_remove.append(i)
+            elif bottle.hit_player:
+                # Remove bottles that have hit the player
+                bottles_to_remove.append(i)
+            else:
+                # Determine current player z-range based on jumping state
+                if is_on_ground:
+                    current_player_z_start = player_z_ground_start
+                    current_player_z_end = player_z_ground_end
+                else:
+                    current_player_z_start = player_z_air_start
+                    current_player_z_end = player_z_air_end
                 
-                # Update display
-                try:
-                    pg.display.flip()
-                    clock.tick(60)
-                except Exception as e:
-                    logging.error(f"Error updating display: {e}")
+                # Separate bottles by z-position for proper layering
+                if bottle.z < current_player_z_start:
+                    bottles_behind.append(bottle)
+                elif bottle.z > current_player_z_end:
+                    bottles_in_front.append(bottle)
+                else:
+                    # Bottle is in player's current z-space - potential collision
+                    bottles_in_front.append(bottle)  # Draw in front for visibility
+                
+                # Collision detection with proper height/type matching
+                if bottle.is_in_player_collision_zone(not is_on_ground):
+                    player_rect = pg.Rect(int(player_x), int(player_y), player_width, player_height)
+                    bottle_collision_rect = bottle.get_collision_rect(not is_on_ground)
                     
-            except Exception as e:
-                logging.error(f"Error in main game loop: {e}")
-                continue
-            
-                
-    except KeyboardInterrupt:
-        logging.info("Game interrupted by user")
-        return -1
-    except Exception as e:
-        logging.error(f"Critical error in game loop: {e}")
-        logging.error(traceback.format_exc())
-        return -1
+                    if (bottle_collision_rect.width > 0 and bottle_collision_rect.height > 0 and
+                        player_rect.colliderect(bottle_collision_rect)):
+                        lives -= 1
+                        bottle.hit_player = True  # Mark for removal
+                        bottles_to_remove.append(i)
+                        
+                        # Enhanced logging with bottle type
+                        jump_status = "jumping" if not is_on_ground else "on ground"
+                        player_z = f"{current_player_z_start:.1f}-{current_player_z_end:.1f}"
+                        logging.info(f"Player hit while {jump_status} by {bottle.bottle_type} bottle (z={bottle.z:.3f}, player_z={player_z})! Lives remaining: {lives}")
+                        
+                        if lives <= 0:
+                            logging.info("Game over - no lives remaining")
+                            return current_time - start_time  # Return survival time
+        
+        # Remove bottles safely (reverse order to maintain indices)
+        for i in reversed(sorted(set(bottles_to_remove))):
+            if 0 <= i < len(bottles):
+                bottles.pop(i)
+        
+        # Draw bottles in front of player
+        for bottle in bottles_in_front:
+            bottle.draw(screen)
+        
+        draw_player_with_depth(screen, player_x, player_y, player_width, player_height, not is_on_ground)
+        
+        # Draw bottles behind player
+        for bottle in bottles_behind:
+            bottle.draw(screen)
+        
+        # HUD - scaled proportionally
+        scale_x = SCREEN_WIDTH / BASE_WIDTH
+        scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+        
+        # Lives on top-left
+        life_text = font_small.render(f"Lives: {lives}", True, GREEN)
+        screen.blit(life_text, (max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
+        
+        # Time survived on top-right
+        time_survived = (current_time - start_time) // 1000
+        minutes = time_survived // 60
+        seconds = time_survived % 60
+        time_text = font_small.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
+        time_rect = time_text.get_rect()
+        screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
+        
+        # Back button
+        button_width = max(80, int(100 * scale_x))
+        button_height = max(30, int(40 * scale_y))
+        button_x = SCREEN_WIDTH - button_width - max(15, int(20 * scale_x))
+        button_y = SCREEN_HEIGHT - button_height - max(15, int(20 * scale_y))
+
+        back_button = Button(
+            button_x,
+            button_y,
+            button_width,
+            button_height,
+            "BACK",
+            font_small
+        )
+        back_button.draw(screen)
+        
+        # Event handling
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                logging.info("User quit game")
+                return -1
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    logging.info("User pressed escape")
+                    return -1
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                if back_button.handle_event(event):
+                    logging.info("Back button clicked during gameplay")
+                    return -1
+            elif event.type == pg.VIDEORESIZE:
+                # Handle window resize
+                new_width, new_height = event.w, event.h
+                update_screen_dimensions(new_width, new_height)
+                # Reset game elements to new screen size
+                reset_game()
+        
+        # Update display
+        pg.display.flip()
+        clock.tick(60)
+
+current_username = ""
 
 def main():
     """Main game function with menu system"""
@@ -1181,7 +1152,6 @@ def main():
                     
                     if play_btn.handle_event(event):
                         current_state = USERNAME_INPUT
-                        current_username = ""
                         input_active = True
                     elif settings_btn.handle_event(event):
                         current_state = SETTINGS
@@ -1301,10 +1271,8 @@ def main():
             pg.display.flip()
             clock.tick(60)
             
-            
     except Exception as e:
         logging.error(f"Error in main loop: {e}")
-        logging.error(traceback.format_exc())
     finally:
         try:
             pg.quit()
@@ -1316,11 +1284,10 @@ def main():
 if __name__ == "__main__":
     try:
         logging.info("Starting Bottle Ops game")
-        main()
+        main() 
         
     except Exception as e:
         logging.error(f"Fatal error: {e}")
-        logging.error(traceback.format_exc())
         
     finally:
         try:
