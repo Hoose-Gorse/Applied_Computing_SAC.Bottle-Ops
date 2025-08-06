@@ -362,6 +362,7 @@ class ScrollBar:
                     # Start dragging thumb
                     self.dragging = True
                     self.drag_offset = mouse_y - self.thumb_y
+                    print(f"Started dragging at thumb_y={self.thumb_y}, mouse_y={mouse_y}, offset={self.drag_offset}")
                     return True
                 elif self.rect.collidepoint(mouse_x, mouse_y):
                     # Click on track - jump to position
@@ -373,12 +374,16 @@ class ScrollBar:
                         new_scroll = int(scroll_progress * self.total_items)
                         self.scroll_position = max(0, min(self.max_scroll, new_scroll))
                         self.update_thumb()
+                        print(f"Track clicked, new scroll position: {self.scroll_position}")
                         return True
         
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1:
+                was_dragging = self.dragging
+                if was_dragging:
+                    print("Stopped dragging")
                 self.dragging = False
-                return self.dragging  # Return previous state
+                return was_dragging
         
         elif event.type == pg.MOUSEMOTION:
             if self.dragging:
@@ -386,14 +391,20 @@ class ScrollBar:
                 new_thumb_y = mouse_y - self.drag_offset
                 
                 # Constrain thumb to track
-                new_thumb_y = max(self.rect.y, min(self.max_thumb_y, new_thumb_y))
+                new_thumb_y = max(self.rect.y, min(self.rect.y + self.rect.height - self.thumb_height, new_thumb_y))
                 
                 # Calculate scroll position from thumb position
-                if self.max_thumb_y > self.rect.y:
-                    scroll_progress = (new_thumb_y - self.rect.y) / (self.max_thumb_y - self.rect.y)
+                track_range = self.rect.height - self.thumb_height
+                if track_range > 0:
+                    scroll_progress = (new_thumb_y - self.rect.y) / track_range
+                    old_scroll = self.scroll_position
                     self.scroll_position = int(scroll_progress * self.max_scroll)
                     self.scroll_position = max(0, min(self.max_scroll, self.scroll_position))
                     self.update_thumb()
+                    
+                    if old_scroll != self.scroll_position:
+                        print(f"Dragging: mouse_y={mouse_y}, new_thumb_y={new_thumb_y}, scroll={self.scroll_position}")
+                    
                     return True
         
         return False
@@ -417,6 +428,42 @@ class ScrollBar:
         thumb_color = LIGHT_GRAY if not self.dragging else WHITE
         pg.draw.rect(surface, thumb_color, thumb_rect)
         pg.draw.rect(surface, GRAY, thumb_rect, 1)
+
+# Updated leaderboard event handling
+def handle_leaderboard_events():
+    """Handle events for leaderboard state"""
+    global current_state, leaderboard_scroll
+    
+    clear_btn, back_btn, scrollbar = show_leaderboard()
+    
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
+            return False  # Signal to exit
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                current_state = MENU
+        elif event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                # Handle scrollbar first
+                if scrollbar.handle_mouse_down(event.pos):
+                    leaderboard_scroll = scrollbar.scroll_position
+                # Then handle buttons
+                elif clear_btn.handle_event(event):
+                    if len(leaderboard.get_all_scores()) > 0:
+                        leaderboard.clear_all_scores()
+                        leaderboard_scroll = 0
+                        logging.info("Leaderboard cleared by user")
+                elif back_btn.handle_event(event):
+                    leaderboard_scroll = 0
+                    current_state = MENU
+        elif event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1:  # Left click release
+                scrollbar.handle_mouse_up(event.pos)
+        elif event.type == pg.MOUSEMOTION:
+            if scrollbar.handle_mouse_motion(event.pos):
+                leaderboard_scroll = scrollbar.scroll_position
+    
+    return True  # Continue running
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=BLUE):
@@ -764,7 +811,7 @@ def recalculate_scrollbar():
 
 def show_leaderboard():
     """Display the leaderboard with visual scrollbar"""
-    global leaderboard_scroll, max_visible_scores, scrollbar
+    global leaderboard_scroll, scrollbar
     
     screen.fill(BLACK)
     
@@ -782,33 +829,66 @@ def show_leaderboard():
     line_spacing = max(20, int(30 * scale_y))
     
     # Define scores display area
-    scores_start_y = int(SCREEN_HEIGHT * 0.25)  # Start below title
-    scores_end_y = int(SCREEN_HEIGHT * 0.75)    # End above buttons
+    scores_start_y = int(SCREEN_HEIGHT * 0.3)  # Start below title
+    scores_end_y = int(SCREEN_HEIGHT * 0.8)    # End above buttons
     scores_area_height = scores_end_y - scores_start_y
 
     # Draw outline around the scores area
     box_margin = max(8, int(10 * scale_y))  # Add some padding around the scores
-    box_x = int(SCREEN_WIDTH * 0.1)
+    box_x = int(SCREEN_WIDTH * 0.3)
     box_width = SCREEN_WIDTH - 2 * box_x
-    box_y = scores_start_y - box_margin
-    box_height = scores_area_height + 2 * box_margin
+    box_y = scores_start_y - box_margin - 20
+    box_height = 40 + scores_area_height + 2 * box_margin
 
     outline_rect = pg.Rect(box_x, box_y, box_width, box_height)
     pg.draw.rect(screen, GRAY, outline_rect, max(2, int(3 * min(scale_x, scale_y))))
     
-    # Create or update scrollbar
+    # Calculate how many scores can fit in the grey box
+    available_height = box_height - 2 * box_margin
+    max_visible_scores = max(1, int(available_height // line_spacing))
+    
+    # Create scrollbar only if it doesn't exist or needs updating
     scrollbar_width = max(15, int(20 * scale_x))
-    scrollbar_x = SCREEN_WIDTH - max(30, int(40 * scale_x))
-    scrollbar_y = scores_start_y
-    scrollbar_height = scores_area_height - max(30, int(40 * scale_y))  # Leave space for scroll info
+    scrollbar_x = box_x + box_width + max(5, int(8 * scale_x))
+    scrollbar_y = box_y
+    scrollbar_height = box_height
     
-    recalculate_scrollbar()
+    # Only create new scrollbar if dimensions changed or doesn't exist
+    if ('scrollbar' not in globals() or 
+        scrollbar.rect.x != scrollbar_x or 
+        scrollbar.rect.y != scrollbar_y or 
+        scrollbar.rect.width != scrollbar_width or 
+        scrollbar.rect.height != scrollbar_height or
+        scrollbar.total_items != len(all_scores) or
+        scrollbar.visible_items != max_visible_scores):
+        
+        old_dragging = False
+        old_scroll = 0
+        if 'scrollbar' in globals():
+            old_dragging = scrollbar.dragging
+            old_scroll = scrollbar.scroll_position
+            
+        scrollbar = ScrollBar(
+            scrollbar_x,
+            scrollbar_y,
+            scrollbar_width,
+            scrollbar_height,
+            len(all_scores),
+            max_visible_scores
+        )
+        
+        # Preserve dragging state and scroll position
+        scrollbar.dragging = old_dragging
+        scrollbar.set_scroll_position(old_scroll)
     
-    # Update scrollbar scroll position
+    # Update scroll position from global variable
     scrollbar.set_scroll_position(leaderboard_scroll)
     
-    # Display visible scores
+    # Display visible scores within the grey box bounds
     visible_scores = all_scores[leaderboard_scroll:leaderboard_scroll + max_visible_scores]
+    
+    # Calculate left margin for text alignment (inside the grey box)
+    text_left_margin = box_x + max(15, int(20 * scale_x))  # Left edge of box + padding
     
     for i, score_data in enumerate(visible_scores):
         username = score_data['username']
@@ -821,7 +901,9 @@ def show_leaderboard():
         rank_text = f"{actual_rank}. {username} - {minutes:02d}:{seconds:02d}"
         
         # Highlight top 3 scores
-        if actual_rank == 1:
+        if username == current_username:
+            color = RED
+        elif actual_rank == 1:
             color = YELLOW  # Gold for 1st
         elif actual_rank == 2:
             color = (192, 192, 192)  # Silver for 2nd
@@ -831,10 +913,14 @@ def show_leaderboard():
             color = WHITE
         
         score_surface = font_small.render(rank_text, True, color)
-        score_rect = score_surface.get_rect(center=(SCREEN_WIDTH // 2 - scrollbar_width, scores_start_y + i * line_spacing))
+        # Left-align the text within the grey box
+        score_rect = score_surface.get_rect()
+        score_rect.x = text_left_margin
+        score_rect.y = box_y + box_margin + i * line_spacing  # Position within grey box bounds
         
-        # Only draw if within the scores area
-        if score_rect.bottom <= scores_end_y:
+        # Only draw if within the grey box bounds
+        if (score_rect.y >= box_y + box_margin and 
+            score_rect.bottom <= box_y + box_height - box_margin):
             screen.blit(score_surface, score_rect)
     
     # Empty leaderboard message
@@ -843,7 +929,7 @@ def show_leaderboard():
         empty_rect = empty_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         screen.blit(empty_text, empty_rect)
     
-    # Draw scrollbar
+    # Draw scrollbar only if needed
     if len(all_scores) > max_visible_scores:
         scrollbar.draw(screen)
     
@@ -1306,25 +1392,19 @@ def main():
                         if event.key == pg.K_ESCAPE:
                             current_state = MENU
                     
-                    # Handle scrollbar events first
+                    # Handle scrollbar events first (all event types)
                     if scrollbar.handle_event(event):
                         leaderboard_scroll = scrollbar.scroll_position
-                    
                     # Handle button events
-                    if clear_btn.handle_event(event):
-                        # Clear leaderboard with confirmation
+                    elif clear_btn.handle_event(event):
                         if len(leaderboard.get_all_scores()) > 0:
                             leaderboard.clear_all_scores()
-                            leaderboard_scroll = 0  # Reset scroll position
-                            # Recreate scrollbar for new empty list
-                            scrollbar = ScrollBar(scrollbar.rect.x, scrollbar.rect.y, 
-                                                scrollbar.rect.width, scrollbar.rect.height,
-                                                0, max_visible_scores)
+                            leaderboard_scroll = 0
                             logging.info("Leaderboard cleared by user")
                     elif back_btn.handle_event(event):
-                        leaderboard_scroll = 0  # Reset scroll when leaving
+                        leaderboard_scroll = 0
                         current_state = MENU
-            
+    
             elif current_state == GAME_OVER:
                 continue_btn = show_game_over_screen()
                 
