@@ -145,9 +145,8 @@ try:
     WINDOWED_HEIGHT = BASE_HEIGHT
     
     # Game settings
-    is_fullscreen = False  # Start in windowed mode
-    
-    # Create windowed display (not fullscreen)
+    is_fullscreen = True  # Start in fullscreen mode
+
     if is_fullscreen:
         screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
     else:
