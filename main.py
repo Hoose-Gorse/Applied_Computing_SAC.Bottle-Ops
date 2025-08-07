@@ -307,7 +307,6 @@ class LeaderboardManager:
         """Clear all scores from leaderboard"""
         self.scores = []
         self.save_scores()
-        logging.info("Leaderboard cleared")
 
 class ScrollBar:
     def __init__(self, x, y, width, height, total_items, visible_items):
@@ -1349,7 +1348,7 @@ def main():
                             else:
                                 current_username = current_username[:-1]
                         else:
-                            if len(current_username) < 15 and event.unicode.isprintable():
+                            if len(current_username) < 10 and event.unicode.isprintable():
                                 current_username += event.unicode
                     elif event.type == pg.MOUSEBUTTONDOWN:
                         input_active = input_box.collidepoint(event.pos)
@@ -1442,7 +1441,6 @@ if __name__ == "__main__":
     finally:
         try:
             pg.quit()
-            logging.info("Game shut down successfully")
         except:
             pass
         exit(0)
