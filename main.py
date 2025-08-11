@@ -146,7 +146,8 @@ try:
     
     # Game settings
     is_fullscreen = True  # Start in fullscreen mode
-
+    
+    # Create windowed display (not fullscreen)
     if is_fullscreen:
         screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.FULLSCREEN | pg.SCALED)
     else:
@@ -220,11 +221,11 @@ try:
     get_scaled_values()
     
     # Player depth properties (these remain constant as they're ratios)
-    player_z_ground_start = 0.4  # Player z-space when on ground (0.4 to 0.6)
-    player_z_ground_end = 0.6
-    player_z_air_start = 0.2     # Player z-space when jumping (0.2 to 0.4)
-    player_z_air_end = 0.4
-    player_collision_depth = 0.2  # Always 0.2 units of depth
+    player_z_ground_start = 0.45  # Player z-space when on ground (0.4 to 0.6)
+    player_z_ground_end = 0.5
+    player_z_air_start = 0.45     # Player z-space when jumping (0.2 to 0.4)
+    player_z_air_end = 0.5
+    player_collision_depth = 0.1  # Always 0.2 units of depth
     
     is_on_ground = False
     
@@ -1185,7 +1186,7 @@ def safe_game_loop():
                     bottles_in_front.append(bottle)
                 else:
                     # Bottle is in player's current z-space - potential collision
-                    bottles_in_front.append(bottle)  # Draw in front for visibility
+                    bottles_behind.append(bottle)  # Draw in front for visibility
                 
                 # Collision detection with proper height/type matching
                 if bottle.is_in_player_collision_zone(not is_on_ground):
@@ -1212,14 +1213,14 @@ def safe_game_loop():
             if 0 <= i < len(bottles):
                 bottles.pop(i)
         
-        # Draw bottles in front of player
-        for bottle in bottles_in_front:
+        # Draw bottles behind player
+        for bottle in bottles_behind:
             bottle.draw(screen)
         
         draw_player_with_depth(screen, player_x, player_y, player_width, player_height, not is_on_ground)
         
-        # Draw bottles behind player
-        for bottle in bottles_behind:
+        # Draw bottles in front of player
+        for bottle in bottles_in_front:
             bottle.draw(screen)
         
         # HUD - scaled proportionally
