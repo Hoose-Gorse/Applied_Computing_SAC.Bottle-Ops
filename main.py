@@ -174,6 +174,8 @@ try:
     DARK_GRAY = (64, 64, 64)
     YELLOW = (255, 255, 0)
     LIGHT_GRAY = (200, 200, 200)
+    ORANGE = (255, 165, 0)
+    PURPLE = (128, 0, 128)
     
     # Fade transition variables
     fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -245,15 +247,37 @@ try:
     
     is_on_ground = False
     
+    # Enhanced scoring system variables
+    score = 0
+    bottles_dodged = 0
+    close_calls = 0
+    combo_multiplier = 1.0
+    combo_timer = 0
+    combo_duration = 180  # 3 seconds at 60 FPS
+    
+    # Scoring constants
+    BASE_DODGE_SCORE = 10
+    CLOSE_CALL_SCORE = 25
+    CLOSE_CALL_DISTANCE = 100  # Pixels for close call detection
+    COMBO_INCREMENT = 0.2  # How much combo increases per consecutive dodge
+    MAX_COMBO = 5.0  # Maximum combo multiplier
+    
+    # Visual feedback for scoring
+    score_popups = []  # List of score popup effects
+    
     # Game state
     lives = 9
     start_time = pg.time.get_ticks()
-    bottle_spawn_time = 1000
+    bottle_spawn_time = 1000  # Starting spawn time (will decrease with difficulty)
     last_bottle_time = pg.time.get_ticks()
     bottles = []
     next_bottle_preview = None  # Preview bottle that will be thrown
     next_bottle_show_time = 0   # When the preview bottle was shown
     next_bottle_throw_delay = 1000  # 1 second delay before throwing
+    
+    # Difficulty progression constants
+    MIN_SPAWN_TIME = 200  # Minimum time between bottles (0.2 seconds at 60fps)
+    DIFFICULTY_INCREASE_INTERVAL = 500  # Points needed to increase difficulty
     
     # Leaderboard scrolling
     leaderboard_scroll = 0
@@ -278,6 +302,13 @@ except Exception as e:
     logging.error(f"Failed to initialize game: {e}")
     pg.quit()
     exit(1)
+
+def get_current_difficulty():
+    """Calculate current difficulty based on score"""
+    difficulty_level = score // DIFFICULTY_INCREASE_INTERVAL
+    # Calculate spawn time: start at 1000ms, decrease by 80ms per level, min 200ms
+    current_spawn_time = max(MIN_SPAWN_TIME, 1000 - (difficulty_level * 80))
+    return current_spawn_time
 
 def start_fade_transition(target_state):
     """Start a fade out transition to a target state"""
@@ -316,6 +347,68 @@ def draw_fade():
     if fade_direction != 0 and fade_alpha > 0:
         fade_surface.set_alpha(fade_alpha)
         screen.blit(fade_surface, (0, 0))
+
+class ScorePopup:
+    """Visual feedback for scoring events"""
+    def __init__(self, x, y, text, color, font):
+        self.x = x
+        self.y = y
+        self.text = text
+        self.color = color
+        self.font = font
+        self.alpha = 255
+        self.timer = 0
+        self.max_time = 90  # 1.5 seconds at 60 FPS
+        self.y_offset = 0
+        
+    def update(self):
+        """Update popup animation"""
+        self.timer += 1
+        self.y_offset -= 1  # Float upward
+        
+        # Fade out
+        progress = self.timer / self.max_time
+        self.alpha = int(255 * (1 - progress))
+        
+        return self.timer >= self.max_time  # Return True when done
+    
+    def draw(self, surface):
+        """Draw the popup"""
+        if self.alpha <= 0:
+            return
+            
+        text_surface = self.font.render(self.text, True, self.color)
+        text_surface.set_alpha(self.alpha)
+        
+        surface.blit(text_surface, (self.x, self.y + self.y_offset))
+
+def add_score_popup(x, y, points, is_close_call=False, combo_mult=1.0):
+    """Add a visual score popup"""
+    global score_popups
+    
+    # Determine popup text and color
+    if is_close_call:
+        text = f"CLOSE CALL! +{points}"
+        color = ORANGE
+    elif combo_mult > 1.0:
+        text = f"+{points} (x{combo_mult:.1f})"
+        color = PURPLE
+    else:
+        text = f"+{points}"
+        color = GREEN
+    
+    popup = ScorePopup(x, y, text, color, font_small)
+    score_popups.append(popup)
+
+def update_score_popups():
+    """Update all score popups and remove finished ones"""
+    global score_popups
+    score_popups = [popup for popup in score_popups if not popup.update()]
+
+def draw_score_popups(surface):
+    """Draw all active score popups"""
+    for popup in score_popups:
+        popup.draw(surface)
 
 class LeaderboardManager:
     def __init__(self, filename="leaderboard.json"):
@@ -601,6 +694,7 @@ class Bottle:
         
         self.active = True
         self.hit_player = False  # Track if bottle hit player
+        self.scored = False  # Track if bottle has been scored for dodging
 
     def update(self):
         """Update bottle position and state"""
@@ -706,6 +800,33 @@ class Bottle:
             hitbox_height
         )
 
+    def get_distance_to_player(self, player_x, player_y, player_width, player_height):
+        """Calculate distance between bottle center and player center"""
+        player_center_x = player_x + player_width // 2
+        player_center_y = player_y + player_height // 2
+        
+        dx = self.x - player_center_x
+        dy = self.y - player_center_y
+        
+        return (dx * dx + dy * dy) ** 0.5
+
+    def is_close_call(self, player_x, player_y, player_width, player_height, player_is_jumping):
+        """Check if this bottle qualifies as a close call based on distance and type matching"""
+        # Close calls only count when:
+        # 1. The bottle type matches the player's current state
+        # 2. The bottle is within close call distance
+        # 3. The bottle is in the collision z-zone
+        
+        # Type matching check
+        if self.bottle_type == "air" and not player_is_jumping:
+            return False  # Air bottle but player on ground - no close call
+        elif self.bottle_type == "ground" and player_is_jumping:
+            return False  # Ground bottle but player jumping - no close call
+        
+        # Check distance
+        distance = self.get_distance_to_player(player_x, player_y, player_width, player_height)
+        return distance <= CLOSE_CALL_DISTANCE
+
 def draw_player_with_depth(surface, x, y, width, height, is_jumping):
     """Draw player with visual depth representation based on jumping state"""
     if is_jumping:
@@ -738,7 +859,8 @@ def draw_player_with_depth(surface, x, y, width, height, is_jumping):
 def reset_game():
     """Reset all game variables for a new game"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, start_time, last_bottle_time, bottles
-    global next_bottle_preview, next_bottle_show_time
+    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer, score_popups
+    global bottle_spawn_time
     
     # Recalculate scaled values in case screen size changed
     get_scaled_values()
@@ -754,6 +876,26 @@ def reset_game():
     bottles = []
     next_bottle_preview = None
     next_bottle_show_time = 0
+    
+    # Reset scoring system
+    score = 0
+    bottles_dodged = 0
+    close_calls = 0
+    combo_multiplier = 1.0
+    combo_timer = 0
+    score_popups = []
+    
+    # Reset difficulty
+    bottle_spawn_time = 1000  # Start with 1 second spawn time
+
+def calculate_final_score():
+    """Calculate final score with time bonus instead of lives bonus"""
+    global final_score, start_time
+    current_time = pg.time.get_ticks()
+    survival_time_seconds = (current_time - start_time) // 1000
+    time_bonus = survival_time_seconds * 10  # 10 points per second survived
+    final_score = score + time_bonus
+    logging.info(f"Final score calculation: base={score}, time_bonus={time_bonus} ({survival_time_seconds}s), total={final_score}")
 
 def show_menu():
     """Display the main menu"""
@@ -946,12 +1088,10 @@ def show_leaderboard():
     for i, score_data in enumerate(visible_scores):
         username = score_data['username']
         score = score_data['score']
-        minutes = score // 60
-        seconds = score % 60
         
         # Actual rank in full leaderboard
         actual_rank = leaderboard_scroll + i + 1
-        rank_text = f"{actual_rank}. {username} - {minutes:02d}:{seconds:02d}"
+        rank_text = f"{actual_rank}. {username} - {score:,} pts"
         
         # Highlight top 3 scores
         if username == current_username:
@@ -1095,27 +1235,55 @@ def show_username_input():
     return input_box, back_button
 
 def show_game_over_screen():
-    """Display game over screen"""
+    """Display game over screen with detailed scoring breakdown including time bonus"""
+    global start_time
     screen.fill(BLACK)
     
     # Game Over text
     go_text = font_large.render("GAME OVER", True, RED)
-    go_rect = go_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    go_rect = go_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 5))
     screen.blit(go_text, go_rect)
     
+    # Score breakdown
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    line_height = max(25, int(35 * scale_y))
+    start_y = SCREEN_HEIGHT // 3
+    
+    # Base score
+    base_text = font_medium.render(f"Base Score: {score:,}", True, WHITE)
+    base_rect = base_text.get_rect(center=(SCREEN_WIDTH // 2, start_y))
+    screen.blit(base_text, base_rect)
+    
+    # Time bonus (instead of lives bonus)
+    current_time = pg.time.get_ticks()
+    survival_time_seconds = (current_time - start_time) // 1000
+    time_bonus = survival_time_seconds * 10
+    minutes = survival_time_seconds // 60
+    seconds = survival_time_seconds % 60
+    time_text = font_medium.render(f"Time Bonus: {time_bonus:,} ({minutes:02d}:{seconds:02d})", True, GREEN)
+    time_rect = time_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + line_height))
+    screen.blit(time_text, time_rect)
+    
+    # Statistics
+    stats_y = start_y + line_height * 2.5
+    bottles_text = font_small.render(f"Bottles Dodged: {bottles_dodged}", True, GRAY)
+    bottles_rect = bottles_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y))
+    screen.blit(bottles_text, bottles_rect)
+    
+    close_text = font_small.render(f"Close Calls: {close_calls}", True, ORANGE)
+    close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y + line_height * 0.7))
+    screen.blit(close_text, close_rect)
+    
     # Final score
-    minutes = final_score // 60
-    seconds = final_score % 60
-    score_text = font_medium.render(f"Final Time: {minutes:02d}:{seconds:02d}", True, WHITE)
-    score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-    screen.blit(score_text, score_rect)
+    final_text = font_large.render(f"FINAL: {final_score:,}", True, YELLOW)
+    final_rect = final_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + line_height * 4))
+    screen.blit(final_text, final_rect)
     
     # Continue button - scaled proportionally
     scale_x = SCREEN_WIDTH / BASE_WIDTH
-    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     continue_button = Button(
         SCREEN_WIDTH // 2 - max(80, int(100 * scale_x)), 
-        SCREEN_HEIGHT // 2 + max(35, int(50 * scale_y)), 
+        SCREEN_HEIGHT // 2 + max(80, int(120 * scale_y)), 
         max(160, int(200 * scale_x)), 
         max(30, int(40 * scale_y)), 
         "CONTINUE", 
@@ -1131,9 +1299,10 @@ def show_game_over_screen():
     return continue_button
 
 def safe_game_loop():
-    """Main game loop with minimal error handling"""
+    """Main game loop with enhanced scoring system and progressive difficulty"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
-    global next_bottle_preview, next_bottle_show_time
+    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer
+    global bottle_spawn_time
     
     running = True
     frame_count = 0
@@ -1141,6 +1310,9 @@ def safe_game_loop():
     while running:
         frame_count += 1
         current_time = pg.time.get_ticks()
+        
+        # Update difficulty based on score
+        bottle_spawn_time = get_current_difficulty()
         
         screen.fill(BLACK)
         keys = pg.key.get_pressed()
@@ -1165,6 +1337,12 @@ def safe_game_loop():
             player_y = player_base_y
             vel_y = 0
             is_on_ground = True
+        
+        # Update combo timer
+        if combo_timer > 0:
+            combo_timer -= 1
+            if combo_timer <= 0:
+                combo_multiplier = 1.0  # Reset combo when timer expires
         
         # Drunk guy (stationary) - just draw it
         drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
@@ -1220,6 +1398,34 @@ def safe_game_loop():
         
         for i, bottle in enumerate(bottles):
             if bottle.update():
+                # Bottle has moved past the target - check if it should be scored as dodged
+                if not bottle.hit_player and not bottle.scored:
+                    # Check if this was a close call using the improved detection
+                    is_close_call = bottle.is_close_call(player_x, player_y, player_width, player_height, not is_on_ground)
+                    
+                    # Calculate score (no lives multiplier anymore)
+                    base_points = CLOSE_CALL_SCORE if is_close_call else BASE_DODGE_SCORE
+                    points = int(base_points * combo_multiplier)
+                    
+                    # Add to score
+                    score += points
+                    bottles_dodged += 1
+                    if is_close_call:
+                        close_calls += 1
+                    
+                    # Update combo system
+                    combo_multiplier = min(MAX_COMBO, combo_multiplier + COMBO_INCREMENT)
+                    combo_timer = combo_duration
+                    
+                    # Add visual feedback
+                    add_score_popup(
+                        bottle.x, bottle.y - 30, 
+                        points, is_close_call, combo_multiplier
+                    )
+                    
+                    bottle.scored = True
+                    logging.info(f"Bottle dodged! Points: {points} (base: {base_points}, combo: x{combo_multiplier:.1f}) Close call: {is_close_call}")
+                
                 bottles_to_remove.append(i)
             elif bottle.hit_player:
                 # Remove bottles that have hit the player
@@ -1253,6 +1459,10 @@ def safe_game_loop():
                         bottle.hit_player = True  # Mark for removal
                         bottles_to_remove.append(i)
                         
+                        # Reset combo when hit
+                        combo_multiplier = 1.0
+                        combo_timer = 0
+                        
                         # Enhanced logging with bottle type
                         jump_status = "jumping" if not is_on_ground else "on ground"
                         player_z = f"{current_player_z_start:.1f}-{current_player_z_end:.1f}"
@@ -1260,12 +1470,16 @@ def safe_game_loop():
                         
                         if lives <= 0:
                             logging.info("Game over - no lives remaining")
+                            calculate_final_score()
                             return current_time - start_time  # Return survival time
         
         # Remove bottles safely (reverse order to maintain indices)
         for i in reversed(sorted(set(bottles_to_remove))):
             if 0 <= i < len(bottles):
                 bottles.pop(i)
+        
+        # Update score popups
+        update_score_popups()
         
         # Draw bottles behind player
         for bottle in bottles_behind:
@@ -1277,13 +1491,50 @@ def safe_game_loop():
         for bottle in bottles_in_front:
             bottle.draw(screen)
         
-        # HUD - scaled proportionally
+        # Draw score popups on top
+        draw_score_popups(screen)
+        
+        # Enhanced HUD - scaled proportionally
         scale_x = SCREEN_WIDTH / BASE_WIDTH
         scale_y = SCREEN_HEIGHT / BASE_HEIGHT
         
-        # Lives on top-left
-        life_text = font_small.render(f"Lives: {lives}", True, GREEN)
+        # Lives on top-left with color coding
+        lives_color = GREEN if lives > 6 else ORANGE if lives > 3 else RED
+        life_text = font_small.render(f"Lives: {lives}", True, lives_color)
         screen.blit(life_text, (max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
+        
+        # Score on top-center
+        score_text = font_medium.render(f"Score: {score:,}", True, WHITE)
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, max(20, int(25 * scale_y))))
+        screen.blit(score_text, score_rect)
+        
+        # Difficulty indicator (spawn time)
+        difficulty_level = score // DIFFICULTY_INCREASE_INTERVAL
+        difficulty_text = font_small.render(f"Level: {difficulty_level + 1} (Spawn: {bottle_spawn_time}ms)", True, PURPLE)
+        difficulty_rect = difficulty_text.get_rect(center=(SCREEN_WIDTH // 2, max(45, int(55 * scale_y))))
+        screen.blit(difficulty_text, difficulty_rect)
+        
+        # Combo multiplier (only show if > 1.0)
+        if combo_multiplier > 1.0:
+            combo_text = font_small.render(f"COMBO x{combo_multiplier:.1f}", True, PURPLE)
+            combo_rect = combo_text.get_rect(center=(SCREEN_WIDTH // 2, max(65, int(75 * scale_y))))
+            screen.blit(combo_text, combo_rect)
+            
+            # Combo timer bar
+            if combo_timer > 0:
+                bar_width = max(80, int(120 * scale_x))
+                bar_height = max(4, int(6 * scale_y))
+                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
+                bar_y = max(85, int(95 * scale_y))
+                
+                # Background bar
+                pg.draw.rect(screen, DARK_GRAY, (bar_x, bar_y, bar_width, bar_height))
+                
+                # Progress bar
+                progress = combo_timer / combo_duration
+                progress_width = int(bar_width * progress)
+                if progress_width > 0:
+                    pg.draw.rect(screen, PURPLE, (bar_x, bar_y, progress_width, bar_height))
         
         # Time survived on top-right
         time_survived = (current_time - start_time) // 1000
@@ -1292,6 +1543,14 @@ def safe_game_loop():
         time_text = font_small.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
         time_rect = time_text.get_rect()
         screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
+        
+        # Statistics on right side
+        stats_x = SCREEN_WIDTH - max(150, int(180 * scale_x))
+        dodged_text = font_small.render(f"Dodged: {bottles_dodged}", True, WHITE)
+        screen.blit(dodged_text, (stats_x, max(35, int(45 * scale_y))))
+        
+        close_calls_text = font_small.render(f"Close: {close_calls}", True, ORANGE)
+        screen.blit(close_calls_text, (stats_x, max(55, int(65 * scale_y))))
         
         # Back button
         button_width = max(80, int(100 * scale_x))
@@ -1419,7 +1678,7 @@ def main():
                     if survival_time == -1:  # User quit or escaped
                         start_fade_transition(MENU)
                     else:
-                        final_score = survival_time // 1000  # Convert to seconds
+                        # final_score already calculated in safe_game_loop
                         leaderboard.add_score(current_username, final_score)
                         start_fade_transition(GAME_OVER)
                 
