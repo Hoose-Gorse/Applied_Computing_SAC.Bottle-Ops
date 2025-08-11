@@ -51,7 +51,7 @@ def load_font(font_name, size):
 def update_screen_dimensions(new_width, new_height):
     """Update all screen-dependent variables when screen size changes"""
     global SCREEN_WIDTH, SCREEN_HEIGHT, WINDOWED_WIDTH, WINDOWED_HEIGHT, screen, font_large, font_medium, font_small
-    global is_fullscreen
+    global is_fullscreen, fade_surface
     
     SCREEN_WIDTH = new_width
     SCREEN_HEIGHT = new_height
@@ -73,6 +73,10 @@ def update_screen_dimensions(new_width, new_height):
     # Update all scaled game values
     get_scaled_values()
     
+    # Update fade surface for new screen size
+    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    fade_surface.fill(BLACK)
+    
     # Update scrollbar if it exists
     if 'scrollbar' in globals():
         recalculate_scrollbar()
@@ -82,7 +86,7 @@ def update_screen_dimensions(new_width, new_height):
 def toggle_fullscreen():
     """Toggle fullscreen mode safely"""
     global is_fullscreen, screen, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOWED_WIDTH, WINDOWED_HEIGHT
-    global font_large, font_medium, font_small
+    global font_large, font_medium, font_small, fade_surface
     
     try:
         if is_fullscreen:
@@ -107,6 +111,10 @@ def toggle_fullscreen():
         
         # Update all scaled game values
         get_scaled_values()
+        
+        # Update fade surface for new screen size
+        fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        fade_surface.fill(BLACK)
         
         # Update scrollbar if it exists
         if 'scrollbar' in globals():
@@ -166,6 +174,14 @@ try:
     DARK_GRAY = (64, 64, 64)
     YELLOW = (255, 255, 0)
     LIGHT_GRAY = (200, 200, 200)
+    
+    # Fade transition variables
+    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    fade_surface.fill(BLACK)
+    fade_alpha = 0
+    fade_direction = 0  # 0 = no fade, 1 = fade out, -1 = fade in
+    fade_speed = 8  # Alpha change per frame
+    next_state = None  # State to transition to after fade out
     
     # Base font sizes (for reference resolution)
     base_font_large = 48
@@ -262,6 +278,44 @@ except Exception as e:
     logging.error(f"Failed to initialize game: {e}")
     pg.quit()
     exit(1)
+
+def start_fade_transition(target_state):
+    """Start a fade out transition to a target state"""
+    global fade_direction, next_state, fade_alpha
+    fade_direction = 1  # Start fade out
+    next_state = target_state
+    fade_alpha = 0
+
+def update_fade():
+    """Update fade transition and return True if transition is complete"""
+    global fade_alpha, fade_direction, current_state, next_state
+    
+    if fade_direction == 0:
+        return True  # No fade in progress
+    
+    if fade_direction == 1:  # Fading out
+        fade_alpha += fade_speed
+        if fade_alpha >= 255:
+            fade_alpha = 255
+            # Switch to target state and start fading in
+            current_state = next_state
+            next_state = None
+            fade_direction = -1
+    
+    elif fade_direction == -1:  # Fading in
+        fade_alpha -= fade_speed
+        if fade_alpha <= 0:
+            fade_alpha = 0
+            fade_direction = 0  # Fade complete
+            return True
+    
+    return False
+
+def draw_fade():
+    """Draw the fade overlay"""
+    if fade_direction != 0 and fade_alpha > 0:
+        fade_surface.set_alpha(fade_alpha)
+        screen.blit(fade_surface, (0, 0))
 
 class LeaderboardManager:
     def __init__(self, filename="leaderboard.json"):
@@ -440,7 +494,7 @@ def handle_leaderboard_events():
             return False  # Signal to exit
         elif event.type == pg.KEYDOWN:
             if event.key == pg.K_ESCAPE:
-                current_state = MENU
+                start_fade_transition(MENU)
         elif event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
                 # Handle scrollbar first
@@ -454,7 +508,7 @@ def handle_leaderboard_events():
                         logging.info("Leaderboard cleared by user")
                 elif back_btn.handle_event(event):
                     leaderboard_scroll = 0
-                    current_state = MENU
+                    start_fade_transition(MENU)
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1:  # Left click release
                 scrollbar.handle_mouse_up(event.pos)
@@ -1289,12 +1343,15 @@ current_username = ""
 def main():
     """Main game function with menu system"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
-    global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small
+    global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small, fade_direction, next_state
 
     leaderboard = LeaderboardManager()
     
     try:
         while True:
+            # Update fade transition
+            update_fade()
+            
             # Handle global resize events for all states
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -1307,115 +1364,136 @@ def main():
                 # Re-queue the event for state-specific handling
                 pg.event.post(event)
             
-            if current_state == MENU:
-                play_btn, settings_btn, leaderboard_btn, exit_btn = show_menu()
-                
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE:
+            # Only process input if not in the middle of a fade transition
+            if fade_direction == 0:
+                if current_state == MENU:
+                    play_btn, settings_btn, leaderboard_btn, exit_btn = show_menu()
+                    
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
                             return
-                    
-                    # Handle button clicks - don't double call handle_event
-                    if play_btn.handle_event(event):
-                        current_state = USERNAME_INPUT
-                        input_active = True
-                    elif settings_btn.handle_event(event):
-                        current_state = SETTINGS
-                    elif leaderboard_btn.handle_event(event):
-                        current_state = LEADERBOARD
-                    elif exit_btn.handle_event(event):
-                        return
-            
-            elif current_state == USERNAME_INPUT:
-                input_box, back_button = show_username_input()
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE:
+                                return
+                        
+                        # Handle button clicks with fade transitions
+                        if play_btn.handle_event(event):
+                            start_fade_transition(USERNAME_INPUT)
+                            input_active = True
+                        elif settings_btn.handle_event(event):
+                            start_fade_transition(SETTINGS)
+                        elif leaderboard_btn.handle_event(event):
+                            start_fade_transition(LEADERBOARD)
+                        elif exit_btn.handle_event(event):
+                            return
                 
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE:
-                            current_state = MENU
-                        elif event.key == pg.K_RETURN:
-                            if current_username.strip():
-                                reset_game()
-                                current_state = PLAYING
-                        elif event.key == pg.K_BACKSPACE:
-                            mods = pg.key.get_mods()
-                            if mods & pg.KMOD_CTRL:
-                                current_username = ""
+                elif current_state == USERNAME_INPUT:
+                    input_box, back_button = show_username_input()
+                    
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE:
+                                start_fade_transition(MENU)
+                            elif event.key == pg.K_RETURN:
+                                if current_username.strip():
+                                    reset_game()
+                                    start_fade_transition(PLAYING)
+                            elif event.key == pg.K_BACKSPACE:
+                                mods = pg.key.get_mods()
+                                if mods & pg.KMOD_CTRL:
+                                    current_username = ""
+                                else:
+                                    current_username = current_username[:-1]
                             else:
-                                current_username = current_username[:-1]
-                        else:
-                            if len(current_username) < 10 and event.unicode.isprintable():
-                                current_username += event.unicode
-                    elif event.type == pg.MOUSEBUTTONDOWN:
-                        input_active = input_box.collidepoint(event.pos)
-                        if back_button.handle_event(event):
-                            current_state = MENU
+                                if len(current_username) < 10 and event.unicode.isprintable():
+                                    current_username += event.unicode
+                        elif event.type == pg.MOUSEBUTTONDOWN:
+                            input_active = input_box.collidepoint(event.pos)
+                            if back_button.handle_event(event):
+                                start_fade_transition(MENU)
 
-            elif current_state == PLAYING:
-                survival_time = safe_game_loop()
-                if survival_time == -1:  # User quit or escaped
-                    current_state = MENU
-                else:
-                    final_score = survival_time // 1000  # Convert to seconds
-                    leaderboard.add_score(current_username, final_score)
-                    current_state = GAME_OVER
-            
-            elif current_state == SETTINGS:
-                fs_btn, back_btn = show_settings()  
+                elif current_state == PLAYING:
+                    survival_time = safe_game_loop()
+                    if survival_time == -1:  # User quit or escaped
+                        start_fade_transition(MENU)
+                    else:
+                        final_score = survival_time // 1000  # Convert to seconds
+                        leaderboard.add_score(current_username, final_score)
+                        start_fade_transition(GAME_OVER)
                 
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE:
-                            current_state = MENU
+                elif current_state == SETTINGS:
+                    fs_btn, back_btn = show_settings()  
                     
-                    if fs_btn.handle_event(event):
-                        # Toggle fullscreen using the new safe method
-                        if not toggle_fullscreen():
-                            logging.warning("Failed to toggle fullscreen mode")
-                    elif back_btn.handle_event(event):
-                        current_state = MENU
-            
-            elif current_state == LEADERBOARD:
-                clear_btn, back_btn, scrollbar = show_leaderboard()
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE:
+                                start_fade_transition(MENU)
+                        
+                        if fs_btn.handle_event(event):
+                            # Toggle fullscreen using the new safe method
+                            if not toggle_fullscreen():
+                                logging.warning("Failed to toggle fullscreen mode")
+                        elif back_btn.handle_event(event):
+                            start_fade_transition(MENU)
                 
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE:
-                            current_state = MENU
+                elif current_state == LEADERBOARD:
+                    clear_btn, back_btn, scrollbar = show_leaderboard()
                     
-                    # Handle scrollbar events first (all event types)
-                    if scrollbar.handle_event(event):
-                        leaderboard_scroll = scrollbar.scroll_position
-                    # Handle button events
-                    elif clear_btn.handle_event(event):
-                        if len(leaderboard.get_all_scores()) > 0:
-                            leaderboard.clear_all_scores()
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE:
+                                start_fade_transition(MENU)
+                        
+                        # Handle scrollbar events first (all event types)
+                        if scrollbar.handle_event(event):
+                            leaderboard_scroll = scrollbar.scroll_position
+                        # Handle button events
+                        elif clear_btn.handle_event(event):
+                            if len(leaderboard.get_all_scores()) > 0:
+                                leaderboard.clear_all_scores()
+                                leaderboard_scroll = 0
+                                logging.info("Leaderboard cleared by user")
+                        elif back_btn.handle_event(event):
                             leaderboard_scroll = 0
-                            logging.info("Leaderboard cleared by user")
-                    elif back_btn.handle_event(event):
-                        leaderboard_scroll = 0
-                        current_state = MENU
-    
-            elif current_state == GAME_OVER:
-                continue_btn = show_game_over_screen()
-                
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                    elif event.type == pg.KEYDOWN:
-                        if event.key == pg.K_ESCAPE or event.key == pg.K_RETURN:
-                            current_state = MENU
+                            start_fade_transition(MENU)
+        
+                elif current_state == GAME_OVER:
+                    continue_btn = show_game_over_screen()
                     
-                    if continue_btn.handle_event(event):
-                        current_state = MENU
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE or event.key == pg.K_RETURN:
+                                start_fade_transition(MENU)
+                        
+                        if continue_btn.handle_event(event):
+                            start_fade_transition(MENU)
+            
+            else:
+                # During fade transition, still render the current state but don't process input
+                if current_state == MENU:
+                    show_menu()
+                elif current_state == USERNAME_INPUT:
+                    show_username_input()
+                elif current_state == SETTINGS:
+                    show_settings()
+                elif current_state == LEADERBOARD:
+                    show_leaderboard()
+                elif current_state == GAME_OVER:
+                    show_game_over_screen()
+                
+                # Clear event queue during transitions to prevent input buildup
+                pg.event.clear()
+            
+            # Draw fade overlay last (on top of everything)
+            draw_fade()
             
             pg.display.flip()
             clock.tick(60)
