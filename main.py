@@ -259,7 +259,7 @@ try:
     CLOSE_CALL_SCORE = 25
     CLOSE_CALL_DISTANCE = 100  # Pixels for close call detection
     COMBO_INCREMENT = 0.2  # How much combo increases per consecutive dodge
-    MAX_COMBO = 5.0  # Maximum combo multiplier
+    MAX_COMBO = 10.0  # Maximum combo multiplier
     
     # Visual feedback for scoring
     score_popups = []  # List of score popup effects
@@ -402,10 +402,10 @@ def add_score_popup(x, y, points, is_close_call=False, combo_mult=1.0):
     # Determine popup text and color
     if is_close_call:
         text = f"CLOSE CALL! +{points}"
-        color = ORANGE
+        color = RED
     elif combo_mult > 1.0:
         text = f"+{points} (x{combo_mult:.1f})"
-        color = PURPLE
+        color = BLUE
     else:
         text = f"+{points}"
         color = GREEN
@@ -654,15 +654,15 @@ class Bottle:
             # Preview bottles start at a small but visible z to maintain visibility
             self.z = 0.05
         else:
-            self.z = 0.01  # Start far away
+            self.z = 0.05  # Start far away
         
         # Hand-specific properties
         if hand == "left":
             self.z_speed = 0.006  # Slower movement for left hand
             # Random curve for left hand bottles
-            self.curve_strength = random.uniform(0.3, 0.8)  # How much it curves
+            self.curve_strength = random.uniform(0.1, 1.9)  # How much it curves
             self.curve_direction = random.choice([-1, 1])  # Left or right curve
-            self.curve_peak_z = random.uniform(0.3, 0.6)  # Where the curve peaks
+            self.curve_peak_z = random.uniform(0.4, 0.8)  # Where the curve peaks
         else:
             self.z_speed = 0.008  # Normal speed for right hand
             self.curve_strength = 0  # No curve for right hand
@@ -681,7 +681,7 @@ class Bottle:
         self.base_width = max(1, int(5 * scale_x))
         self.base_height = max(1, int(15 * scale_y))
         self.rotation = 0
-        self.rotation_speed = random.uniform(3, 8)
+        self.rotation_speed = random.uniform(5, 12)
         
         # Create bottle surface with appropriate color
         self.original_image = pg.Surface((self.base_width, self.base_height), pg.SRCALPHA)
@@ -925,10 +925,10 @@ def show_menu():
     spacing = max(40, int(50 * scale_y))
     start_y = SCREEN_HEIGHT // 2 - max(60, int(80 * scale_y))
     
-    play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium)
+    play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium, hover_color=GREEN)
     settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium)
-    leaderboard_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "LEADERBOARD", font_medium)
-    exit_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "EXIT", font_medium)
+    leaderboard_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "LEADERBOARD", font_medium, hover_color= YELLOW)
+    exit_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "QUIT", font_medium, hover_color=RED)
     
     # Update hover states for all buttons
     mouse_pos = pg.mouse.get_pos()
@@ -974,8 +974,9 @@ def show_settings():
         SCREEN_HEIGHT // 2 + max(20, int(30 * scale_y)), 
         max(160, int(200 * scale_x)), 
         max(30, int(40 * scale_y)), 
-        "BACK", 
-        font_medium
+        "BACK",
+        font_medium,
+        hover_color=ORANGE
     )
     
     # Update hover states
@@ -1161,7 +1162,8 @@ def show_leaderboard():
         button_width,
         button_height,
         "BACK",
-        font_medium
+        font_medium,
+        hover_color=ORANGE
     )
     
     # Update hover states
@@ -1217,7 +1219,10 @@ def show_username_input():
         pg.draw.line(screen, WHITE, (cursor_x, cursor_y), (cursor_x, cursor_y + cursor_height), max(1, int(2 * min(scale_x, scale_y))))
 
     # Instruction text
-    inst_text = font_small.render("Press ENTER to continue", True, GRAY)
+    if current_username.strip():
+        inst_text = font_small.render("Press ENTER to continue", True, GREEN)
+    else:
+        inst_text = font_small.render("Press ENTER to continue", True, GRAY)
     inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + max(30, int(40 * scale_y))))
     screen.blit(inst_text, inst_rect)
 
@@ -1232,7 +1237,8 @@ def show_username_input():
         button_width,
         button_height,
         "BACK",
-        font_small
+        font_small,
+        hover_color=ORANGE
     )
     
     # Update hover state
@@ -1290,7 +1296,6 @@ def show_game_over_screen():
         button_height,
         "PLAY AGAIN",
         font_small,
-        color=WHITE,
         hover_color=GREEN
     )
 
@@ -1301,7 +1306,6 @@ def show_game_over_screen():
         button_height,
         "LEADERBOARD",
         font_small,
-        color=WHITE,
         hover_color=YELLOW
     )
 
@@ -1321,7 +1325,6 @@ def show_game_over_screen():
         button_height,
         "QUIT",
         font_small,
-        color=WHITE,
         hover_color=RED
     )
 
@@ -1402,7 +1405,7 @@ def safe_game_loop():
             # Time to show a new preview bottle from right hand
             if current_time - last_bottle_time > bottle_spawn_time:
                 # 2/3 chance for ground, 1/3 chance for air (twice as likely for ground)
-                bottle_type = random.choices(["ground", "air"], weights=[2, 1])[0]
+                bottle_type = random.choices(["ground", "air"], weights=[1, 1])[0]
                 
                 # Create preview bottle (not thrown yet)
                 next_bottle_preview = {
@@ -1416,7 +1419,7 @@ def safe_game_loop():
             # Time to show a new preview bottle from left hand
             if current_time - last_left_bottle_time > left_hand_spawn_time:
                 # Same distribution as right hand
-                bottle_type = random.choices(["ground", "air"], weights=[2, 1])[0]
+                bottle_type = random.choices(["ground", "air"], weights=[1, 1])[0]
                 
                 # Create preview bottle (not thrown yet)
                 next_left_bottle_preview = {
@@ -1487,6 +1490,8 @@ def safe_game_loop():
                     
                     # Calculate score with permanent combo system
                     base_points = CLOSE_CALL_SCORE if is_close_call else BASE_DODGE_SCORE
+                    if bottle_type == "air":
+                        base_points = base_points * 1.5
                     points = int(base_points * combo_multiplier)
                     
                     # Add to score
@@ -1592,7 +1597,7 @@ def safe_game_loop():
         
         # Combo multiplier (always show since no timer limit)
         if combo_multiplier > 1.0:
-            combo_text = font_small.render(f"COMBO x{combo_multiplier:.1f}", True, PURPLE)
+            combo_text = font_small.render(f"COMBO x{combo_multiplier:.1f}", True, BLUE)
             combo_rect = combo_text.get_rect(center=(SCREEN_WIDTH // 2, max(45, int(55 * scale_y))))
             screen.blit(combo_text, combo_rect)
         
@@ -1616,7 +1621,8 @@ def safe_game_loop():
             button_width,
             button_height,
             "BACK",
-            font_small
+            font_small,
+            hover_color=ORANGE
         )
         
         # Update hover state for back button
