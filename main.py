@@ -4,6 +4,7 @@ from sys import exit
 import logging
 import json
 import os
+import math
 
 # Configure logging for error handling
 logging.basicConfig(
@@ -268,15 +269,26 @@ try:
     # Game state
     lives = 9
     start_time = pg.time.get_ticks()
-    bottle_spawn_time = 1000  # Starting spawn time (will decrease with difficulty)
+    bottle_spawn_time = 1000  # Starting spawn time for right hand
+    left_hand_spawn_time = 1500  # Left hand spawns slower
     last_bottle_time = pg.time.get_ticks()
+    last_left_bottle_time = pg.time.get_ticks()
     bottles = []
-    next_bottle_preview = None  # Preview bottle that will be thrown
-    next_bottle_show_time = 0   # When the preview bottle was shown
-    next_bottle_throw_delay = 1000  # 1 second delay before throwing
+    
+    # Dual hand system
+    next_bottle_preview = None  # Right hand preview
+    next_bottle_show_time = 0
+    next_bottle_throw_delay = 1000
+    
+    next_left_bottle_preview = None  # Left hand preview
+    next_left_bottle_show_time = 0
+    next_left_bottle_throw_delay = 1000
+    
+    current_throwing_hand = "right"  # Track which hand throws next
     
     # Difficulty progression constants
     MIN_SPAWN_TIME = 200  # Minimum time between bottles (0.2 seconds at 60fps)
+    MIN_LEFT_SPAWN_TIME = 400  # Left hand minimum spawn time (slower)
     DIFFICULTY_INCREASE_INTERVAL = 500  # Points needed to increase difficulty
     
     # Leaderboard scrolling
@@ -308,7 +320,9 @@ def get_current_difficulty():
     difficulty_level = score // DIFFICULTY_INCREASE_INTERVAL
     # Calculate spawn time: start at 1000ms, decrease by 80ms per level, min 200ms
     current_spawn_time = max(MIN_SPAWN_TIME, 1000 - (difficulty_level * 80))
-    return current_spawn_time
+    # Left hand spawn time (always slower)
+    left_spawn_time = max(MIN_LEFT_SPAWN_TIME, 1500 - (difficulty_level * 60))
+    return current_spawn_time, left_spawn_time
 
 def start_fade_transition(target_state):
     """Start a fade out transition to a target state"""
@@ -643,7 +657,7 @@ class Button:
         surface.blit(text_surface, text_rect)
 
 class Bottle:
-    def __init__(self, start_x, start_y, target_x, target_y, bottle_type="ground"):
+    def __init__(self, start_x, start_y, target_x, target_y, bottle_type="ground", hand="right"):
         # Get current scaling factors
         scale_x = SCREEN_WIDTH / BASE_WIDTH
         scale_y = SCREEN_HEIGHT / BASE_HEIGHT
@@ -652,6 +666,7 @@ class Bottle:
         self.start_y = start_y
         self.x = start_x
         self.y = start_y
+        self.hand = hand  # Which hand threw this bottle
         
         # Bottle type determines target z-plane and color
         self.bottle_type = bottle_type  # "ground" or "air"
@@ -672,7 +687,19 @@ class Bottle:
         
         # Z-axis properties for enhanced 3D effect
         self.z = 0.01  # Start far away
-        self.z_speed = 0.008  # Adjusted speed for the new distance
+        
+        # Hand-specific properties
+        if hand == "left":
+            self.z_speed = 0.006  # Slower movement for left hand
+            # Random curve for left hand bottles
+            self.curve_strength = random.uniform(0.3, 0.8)  # How much it curves
+            self.curve_direction = random.choice([-1, 1])  # Left or right curve
+            self.curve_peak_z = random.uniform(0.3, 0.6)  # Where the curve peaks
+        else:
+            self.z_speed = 0.008  # Normal speed for right hand
+            self.curve_strength = 0  # No curve for right hand
+            self.curve_direction = 0
+            self.curve_peak_z = 0
         
         # Calculate movement per frame
         self.total_frames = int((self.target_z - self.z) / self.z_speed)
@@ -704,8 +731,18 @@ class Bottle:
         # Move along z-axis (simulating depth)
         self.z += self.z_speed
         
-        # Move towards target position
-        self.x += self.dx
+        # Calculate curve offset for left hand bottles
+        curve_offset_x = 0
+        if self.hand == "left" and self.curve_strength > 0:
+            # Create a curved trajectory using sine wave
+            progress = self.z / self.target_z
+            if progress <= 1.0:
+                # Peak curve at curve_peak_z
+                curve_progress = min(1.0, progress / self.curve_peak_z) if self.curve_peak_z > 0 else progress
+                curve_offset_x = math.sin(curve_progress * math.pi) * self.curve_strength * self.curve_direction * SCREEN_WIDTH * 0.2
+        
+        # Move towards target position (with curve for left hand)
+        self.x += self.dx + (curve_offset_x * self.z_speed * 10)  # Apply curve gradually
         self.y += self.dy
         
         # Update rotation
@@ -860,7 +897,8 @@ def reset_game():
     """Reset all game variables for a new game"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, start_time, last_bottle_time, bottles
     global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer, score_popups
-    global bottle_spawn_time
+    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
+    global current_throwing_hand
     
     # Recalculate scaled values in case screen size changed
     get_scaled_values()
@@ -873,9 +911,15 @@ def reset_game():
     lives = 9
     start_time = pg.time.get_ticks()
     last_bottle_time = pg.time.get_ticks()
+    last_left_bottle_time = pg.time.get_ticks()
     bottles = []
+    
+    # Reset dual hand system
     next_bottle_preview = None
     next_bottle_show_time = 0
+    next_left_bottle_preview = None
+    next_left_bottle_show_time = 0
+    current_throwing_hand = "right"
     
     # Reset scoring system
     score = 0
@@ -886,7 +930,8 @@ def reset_game():
     score_popups = []
     
     # Reset difficulty
-    bottle_spawn_time = 1000  # Start with 1 second spawn time
+    bottle_spawn_time = 1000  # Start with 1 second spawn time for right hand
+    left_hand_spawn_time = 1500  # Start with 1.5 second spawn time for left hand
 
 def calculate_final_score():
     """Calculate final score with time bonus instead of lives bonus"""
@@ -1299,10 +1344,11 @@ def show_game_over_screen():
     return continue_button
 
 def safe_game_loop():
-    """Main game loop with enhanced scoring system and progressive difficulty"""
+    """Main game loop with enhanced scoring system, progressive difficulty, and dual hand throwing"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
     global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer
-    global bottle_spawn_time
+    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
+    global current_throwing_hand
     
     running = True
     frame_count = 0
@@ -1312,7 +1358,7 @@ def safe_game_loop():
         current_time = pg.time.get_ticks()
         
         # Update difficulty based on score
-        bottle_spawn_time = get_current_difficulty()
+        bottle_spawn_time, left_hand_spawn_time = get_current_difficulty()
         
         screen.fill(BLACK)
         keys = pg.key.get_pressed()
@@ -1348,9 +1394,21 @@ def safe_game_loop():
         drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
         pg.draw.rect(screen, YELLOW, drunk_rect)
         
-        # Bottle preview and spawning system
+        # Calculate hand positions for preview bottles
+        scale_x = SCREEN_WIDTH / BASE_WIDTH
+        scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+        
+        # Right hand position (right side of drunk guy)
+        right_hand_x = drunk_x + drunk_width + max(10, int(15 * scale_x))
+        right_hand_y = drunk_y + drunk_height // 3  # Upper part for right hand
+        
+        # Left hand position (left side of drunk guy)
+        left_hand_x = drunk_x - max(15, int(20 * scale_x))
+        left_hand_y = drunk_y + drunk_height // 3  # Upper part for left hand
+        
+        # RIGHT HAND: Bottle preview and spawning system
         if next_bottle_preview is None:
-            # Time to show a new preview bottle
+            # Time to show a new preview bottle from right hand
             if current_time - last_bottle_time > bottle_spawn_time:
                 # 2/3 chance for ground, 1/3 chance for air (twice as likely for ground)
                 bottle_type = random.choices(["ground", "air"], weights=[2, 1])[0]
@@ -1362,34 +1420,65 @@ def safe_game_loop():
                 }
                 next_bottle_show_time = current_time
         
-        # Draw preview bottle next to drunk guy
+        # LEFT HAND: Bottle preview and spawning system
+        if next_left_bottle_preview is None:
+            # Time to show a new preview bottle from left hand
+            if current_time - last_left_bottle_time > left_hand_spawn_time:
+                # Same distribution as right hand
+                bottle_type = random.choices(["ground", "air"], weights=[2, 1])[0]
+                
+                # Create preview bottle (not thrown yet)
+                next_left_bottle_preview = {
+                    'type': bottle_type,
+                    'color': RED if bottle_type == "ground" else BLUE
+                }
+                next_left_bottle_show_time = current_time
+        
+        # Draw RIGHT HAND preview bottle
         if next_bottle_preview is not None:
-            # Calculate preview bottle position (next to drunk guy)
-            scale_x = SCREEN_WIDTH / BASE_WIDTH
-            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
             preview_size = max(8, int(12 * min(scale_x, scale_y)))
-            preview_x = drunk_x + drunk_width + max(10, int(15 * scale_x))
-            preview_y = drunk_y + drunk_height // 2 - preview_size // 2
-            
-            # Draw preview bottle
-            preview_rect = pg.Rect(preview_x, preview_y, preview_size, preview_size)
+            preview_rect = pg.Rect(right_hand_x, right_hand_y, preview_size, preview_size)
             pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
             
-            # Check if it's time to throw the bottle
+            # Check if it's time to throw the bottle from right hand
             if current_time - next_bottle_show_time >= next_bottle_throw_delay:
-                # Throw the bottle
+                # Throw the bottle from preview position
                 new_bottle = Bottle(
-                    drunk_x + drunk_width // 2,
-                    drunk_y + drunk_height,
+                    right_hand_x + preview_size // 2,  # Start from preview position
+                    right_hand_y + preview_size // 2,
                     player_x + player_width // 2,
                     player_base_y + player_height // 2,
-                    next_bottle_preview['type']
+                    next_bottle_preview['type'],
+                    "right"
                 )
                 bottles.append(new_bottle)
                 
                 # Reset for next bottle
                 next_bottle_preview = None
                 last_bottle_time = current_time
+        
+        # Draw LEFT HAND preview bottle
+        if next_left_bottle_preview is not None:
+            preview_size = max(8, int(12 * min(scale_x, scale_y)))
+            preview_rect = pg.Rect(left_hand_x, left_hand_y, preview_size, preview_size)
+            pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
+            
+            # Check if it's time to throw the bottle from left hand
+            if current_time - next_left_bottle_show_time >= next_left_bottle_throw_delay:
+                # Throw the bottle from preview position
+                new_bottle = Bottle(
+                    left_hand_x + preview_size // 2,  # Start from preview position
+                    left_hand_y + preview_size // 2,
+                    player_x + player_width // 2,
+                    player_base_y + player_height // 2,
+                    next_left_bottle_preview['type'],
+                    "left"
+                )
+                bottles.append(new_bottle)
+                
+                # Reset for next bottle
+                next_left_bottle_preview = None
+                last_left_bottle_time = current_time
         
         # Update bottles and separate by layer
         bottles_to_remove = []
@@ -1463,10 +1552,10 @@ def safe_game_loop():
                         combo_multiplier = 1.0
                         combo_timer = 0
                         
-                        # Enhanced logging with bottle type
+                        # Enhanced logging with bottle type and hand
                         jump_status = "jumping" if not is_on_ground else "on ground"
                         player_z = f"{current_player_z_start:.1f}-{current_player_z_end:.1f}"
-                        logging.info(f"Player hit while {jump_status} by {bottle.bottle_type} bottle (z={bottle.z:.3f}, player_z={player_z})! Lives remaining: {lives}")
+                        logging.info(f"Player hit while {jump_status} by {bottle.hand} hand {bottle.bottle_type} bottle (z={bottle.z:.3f}, player_z={player_z})! Lives remaining: {lives}")
                         
                         if lives <= 0:
                             logging.info("Game over - no lives remaining")
@@ -1510,7 +1599,7 @@ def safe_game_loop():
         
         # Difficulty indicator (spawn time)
         difficulty_level = score // DIFFICULTY_INCREASE_INTERVAL
-        difficulty_text = font_small.render(f"Level: {difficulty_level + 1} (Spawn: {bottle_spawn_time}ms)", True, PURPLE)
+        difficulty_text = font_small.render(f"Level: {difficulty_level + 1} (R:{bottle_spawn_time}ms L:{left_hand_spawn_time}ms)", True, PURPLE)
         difficulty_rect = difficulty_text.get_rect(center=(SCREEN_WIDTH // 2, max(45, int(55 * scale_y))))
         screen.blit(difficulty_text, difficulty_rect)
         
