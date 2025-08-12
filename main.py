@@ -253,8 +253,6 @@ try:
     bottles_dodged = 0
     close_calls = 0
     combo_multiplier = 1.0
-    combo_timer = 0
-    combo_duration = 180  # 3 seconds at 60 FPS
     
     # Scoring constants
     BASE_DODGE_SCORE = 10
@@ -589,42 +587,6 @@ class ScrollBar:
         pg.draw.rect(surface, thumb_color, thumb_rect)
         pg.draw.rect(surface, GRAY, thumb_rect, 1)
 
-# Updated leaderboard event handling
-def handle_leaderboard_events():
-    """Handle events for leaderboard state"""
-    global current_state, leaderboard_scroll
-    
-    clear_btn, back_btn, scrollbar = show_leaderboard()
-    
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            return False  # Signal to exit
-        elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_ESCAPE:
-                start_fade_transition(MENU)
-        elif event.type == pg.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                # Handle scrollbar first
-                if scrollbar.handle_mouse_down(event.pos):
-                    leaderboard_scroll = scrollbar.scroll_position
-                # Then handle buttons
-                elif clear_btn.handle_event(event):
-                    if len(leaderboard.get_all_scores()) > 0:
-                        leaderboard.clear_all_scores()
-                        leaderboard_scroll = 0
-                        logging.info("Leaderboard cleared by user")
-                elif back_btn.handle_event(event):
-                    leaderboard_scroll = 0
-                    start_fade_transition(MENU)
-        elif event.type == pg.MOUSEBUTTONUP:
-            if event.button == 1:  # Left click release
-                scrollbar.handle_mouse_up(event.pos)
-        elif event.type == pg.MOUSEMOTION:
-            if scrollbar.handle_mouse_motion(event.pos):
-                leaderboard_scroll = scrollbar.scroll_position
-    
-    return True  # Continue running
-
 class Button:
     def __init__(self, x, y, width, height, text, font, color=WHITE, hover_color=BLUE):
         self.rect = pg.Rect(x, y, width, height)
@@ -657,7 +619,7 @@ class Button:
         surface.blit(text_surface, text_rect)
 
 class Bottle:
-    def __init__(self, start_x, start_y, target_x, target_y, bottle_type="ground", hand="right"):
+    def __init__(self, start_x, start_y, target_x, target_y, bottle_type="ground", hand="right", is_preview_transition=False):
         # Get current scaling factors
         scale_x = SCREEN_WIDTH / BASE_WIDTH
         scale_y = SCREEN_HEIGHT / BASE_HEIGHT
@@ -667,6 +629,7 @@ class Bottle:
         self.x = start_x
         self.y = start_y
         self.hand = hand  # Which hand threw this bottle
+        self.is_preview_transition = is_preview_transition  # New flag for preview bottles
         
         # Bottle type determines target z-plane and color
         self.bottle_type = bottle_type  # "ground" or "air"
@@ -686,7 +649,11 @@ class Bottle:
             self.color = RED  # Red for ground bottles
         
         # Z-axis properties for enhanced 3D effect
-        self.z = 0.01  # Start far away
+        if is_preview_transition:
+            # Preview bottles start at a small but visible z to maintain visibility
+            self.z = 0.05
+        else:
+            self.z = 0.01  # Start far away
         
         # Hand-specific properties
         if hand == "left":
@@ -896,7 +863,7 @@ def draw_player_with_depth(surface, x, y, width, height, is_jumping):
 def reset_game():
     """Reset all game variables for a new game"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, start_time, last_bottle_time, bottles
-    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer, score_popups
+    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, score_popups
     global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
     global current_throwing_hand
     
@@ -925,8 +892,7 @@ def reset_game():
     score = 0
     bottles_dodged = 0
     close_calls = 0
-    combo_multiplier = 1.0
-    combo_timer = 0
+    combo_multiplier = 1.0  # Remove combo timer - permanent combo system
     score_popups = []
     
     # Reset difficulty
@@ -934,13 +900,10 @@ def reset_game():
     left_hand_spawn_time = 1500  # Start with 1.5 second spawn time for left hand
 
 def calculate_final_score():
-    """Calculate final score with time bonus instead of lives bonus"""
-    global final_score, start_time
-    current_time = pg.time.get_ticks()
-    survival_time_seconds = (current_time - start_time) // 1000
-    time_bonus = survival_time_seconds * 10  # 10 points per second survived
-    final_score = score + time_bonus
-    logging.info(f"Final score calculation: base={score}, time_bonus={time_bonus} ({survival_time_seconds}s), total={final_score}")
+    """Calculate final score without time bonus"""
+    global final_score
+    final_score = score  # No time bonus - just the base score
+    logging.info(f"Final score: {final_score}")
 
 def show_menu():
     """Display the main menu"""
@@ -1280,7 +1243,7 @@ def show_username_input():
     return input_box, back_button
 
 def show_game_over_screen():
-    """Display game over screen with detailed scoring breakdown including time bonus"""
+    """Display game over screen with simplified scoring and multiple options"""
     global start_time
     screen.fill(BLACK)
     
@@ -1289,59 +1252,92 @@ def show_game_over_screen():
     go_rect = go_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 5))
     screen.blit(go_text, go_rect)
     
-    # Score breakdown
+    # Final score (no breakdown needed since no time bonus)
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     line_height = max(25, int(35 * scale_y))
     start_y = SCREEN_HEIGHT // 3
     
-    # Base score
-    base_text = font_medium.render(f"Base Score: {score:,}", True, WHITE)
-    base_rect = base_text.get_rect(center=(SCREEN_WIDTH // 2, start_y))
-    screen.blit(base_text, base_rect)
+    # Final score
+    final_text = font_large.render(f"FINAL SCORE: {final_score:,}", True, YELLOW)
+    final_rect = final_text.get_rect(center=(SCREEN_WIDTH // 2, start_y))
+    screen.blit(final_text, final_rect)
     
-    # Time bonus (instead of lives bonus)
+    # Time survived
     current_time = pg.time.get_ticks()
     survival_time_seconds = (current_time - start_time) // 1000
-    time_bonus = survival_time_seconds * 10
     minutes = survival_time_seconds // 60
     seconds = survival_time_seconds % 60
-    time_text = font_medium.render(f"Time Bonus: {time_bonus:,} ({minutes:02d}:{seconds:02d})", True, GREEN)
+    time_text = font_medium.render(f"Time Survived: {minutes:02d}:{seconds:02d}", True, GREEN)
     time_rect = time_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + line_height))
     screen.blit(time_text, time_rect)
     
-    # Statistics
-    stats_y = start_y + line_height * 2.5
-    bottles_text = font_small.render(f"Bottles Dodged: {bottles_dodged}", True, GRAY)
-    bottles_rect = bottles_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y))
-    screen.blit(bottles_text, bottles_rect)
-    
-    close_text = font_small.render(f"Close Calls: {close_calls}", True, ORANGE)
-    close_rect = close_text.get_rect(center=(SCREEN_WIDTH // 2, stats_y + line_height * 0.7))
-    screen.blit(close_text, close_rect)
-    
-    # Final score
-    final_text = font_large.render(f"FINAL: {final_score:,}", True, YELLOW)
-    final_rect = final_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + line_height * 4))
-    screen.blit(final_text, final_rect)
-    
-    # Continue button - scaled proportionally
+    # Buttons - scaled proportionally
     scale_x = SCREEN_WIDTH / BASE_WIDTH
-    continue_button = Button(
-        SCREEN_WIDTH // 2 - max(80, int(100 * scale_x)), 
-        SCREEN_HEIGHT // 2 + max(80, int(120 * scale_y)), 
-        max(160, int(200 * scale_x)), 
-        max(30, int(40 * scale_y)), 
-        "CONTINUE", 
-        font_medium
+    button_width = max(80, int(140 * scale_x))
+    button_height = max(30, int(40 * scale_y))
+    button_spacing_x = max(10, int(20 * scale_x))
+    button_spacing_y = max(10, int(15 * scale_y))
+    
+    # Calculate button positions in a 2x2 grid
+    total_width = button_width * 2 + button_spacing_x
+    start_x = (SCREEN_WIDTH - total_width) // 2
+    buttons_start_y = start_y + line_height * 3
+    
+    # First row
+    play_again_button = Button(
+        start_x,
+        buttons_start_y,
+        button_width,
+        button_height,
+        "PLAY AGAIN",
+        font_small,
+        color=GREEN,
+        hover_color=WHITE
     )
     
-    # Update hover state
+    leaderboard_button = Button(
+        start_x + button_width + button_spacing_x,
+        buttons_start_y,
+        button_width,
+        button_height,
+        "LEADERBOARD",
+        font_small
+    )
+    
+    # Second row
+    menu_button = Button(
+        start_x,
+        buttons_start_y + button_height + button_spacing_y,
+        button_width,
+        button_height,
+        "MAIN MENU",
+        font_small
+    )
+    
+    quit_button = Button(
+        start_x + button_width + button_spacing_x,
+        buttons_start_y + button_height + button_spacing_y,
+        button_width,
+        button_height,
+        "QUIT",
+        font_small,
+        color=RED,
+        hover_color=ORANGE
+    )
+    
+    # Update hover states
     mouse_pos = pg.mouse.get_pos()
-    continue_button.update_hover(mouse_pos)
+    play_again_button.update_hover(mouse_pos)
+    leaderboard_button.update_hover(mouse_pos)
+    menu_button.update_hover(mouse_pos)
+    quit_button.update_hover(mouse_pos)
     
-    continue_button.draw(screen)
+    play_again_button.draw(screen)
+    leaderboard_button.draw(screen)
+    menu_button.draw(screen)
+    quit_button.draw(screen)
     
-    return continue_button
+    return play_again_button, leaderboard_button, menu_button, quit_button
 
 def safe_game_loop():
     """Main game loop with enhanced scoring system, progressive difficulty, and dual hand throwing"""
@@ -1383,12 +1379,6 @@ def safe_game_loop():
             player_y = player_base_y
             vel_y = 0
             is_on_ground = True
-        
-        # Update combo timer
-        if combo_timer > 0:
-            combo_timer -= 1
-            if combo_timer <= 0:
-                combo_multiplier = 1.0  # Reset combo when timer expires
         
         # Drunk guy (stationary) - just draw it
         drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
@@ -1442,14 +1432,15 @@ def safe_game_loop():
             
             # Check if it's time to throw the bottle from right hand
             if current_time - next_bottle_show_time >= next_bottle_throw_delay:
-                # Throw the bottle from preview position
+                # Create transition bottle that starts visible
                 new_bottle = Bottle(
                     right_hand_x + preview_size // 2,  # Start from preview position
                     right_hand_y + preview_size // 2,
                     player_x + player_width // 2,
                     player_base_y + player_height // 2,
                     next_bottle_preview['type'],
-                    "right"
+                    "right",
+                    is_preview_transition=True  # Start at visible z
                 )
                 bottles.append(new_bottle)
                 
@@ -1465,14 +1456,15 @@ def safe_game_loop():
             
             # Check if it's time to throw the bottle from left hand
             if current_time - next_left_bottle_show_time >= next_left_bottle_throw_delay:
-                # Throw the bottle from preview position
+                # Create transition bottle that starts visible
                 new_bottle = Bottle(
                     left_hand_x + preview_size // 2,  # Start from preview position
                     left_hand_y + preview_size // 2,
                     player_x + player_width // 2,
                     player_base_y + player_height // 2,
                     next_left_bottle_preview['type'],
-                    "left"
+                    "left",
+                    is_preview_transition=True  # Start at visible z
                 )
                 bottles.append(new_bottle)
                 
@@ -1492,7 +1484,7 @@ def safe_game_loop():
                     # Check if this was a close call using the improved detection
                     is_close_call = bottle.is_close_call(player_x, player_y, player_width, player_height, not is_on_ground)
                     
-                    # Calculate score (no lives multiplier anymore)
+                    # Calculate score with permanent combo system
                     base_points = CLOSE_CALL_SCORE if is_close_call else BASE_DODGE_SCORE
                     points = int(base_points * combo_multiplier)
                     
@@ -1502,9 +1494,8 @@ def safe_game_loop():
                     if is_close_call:
                         close_calls += 1
                     
-                    # Update combo system
+                    # Update combo system (no timer limit)
                     combo_multiplier = min(MAX_COMBO, combo_multiplier + COMBO_INCREMENT)
-                    combo_timer = combo_duration
                     
                     # Add visual feedback
                     add_score_popup(
@@ -1550,7 +1541,6 @@ def safe_game_loop():
                         
                         # Reset combo when hit
                         combo_multiplier = 1.0
-                        combo_timer = 0
                         
                         # Enhanced logging with bottle type and hand
                         jump_status = "jumping" if not is_on_ground else "on ground"
@@ -1583,7 +1573,7 @@ def safe_game_loop():
         # Draw score popups on top
         draw_score_popups(screen)
         
-        # Enhanced HUD - scaled proportionally
+        # Simplified HUD - scaled proportionally
         scale_x = SCREEN_WIDTH / BASE_WIDTH
         scale_y = SCREEN_HEIGHT / BASE_HEIGHT
         
@@ -1597,33 +1587,11 @@ def safe_game_loop():
         score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, max(20, int(25 * scale_y))))
         screen.blit(score_text, score_rect)
         
-        # Difficulty indicator (spawn time)
-        difficulty_level = score // DIFFICULTY_INCREASE_INTERVAL
-        difficulty_text = font_small.render(f"Level: {difficulty_level + 1} (R:{bottle_spawn_time}ms L:{left_hand_spawn_time}ms)", True, PURPLE)
-        difficulty_rect = difficulty_text.get_rect(center=(SCREEN_WIDTH // 2, max(45, int(55 * scale_y))))
-        screen.blit(difficulty_text, difficulty_rect)
-        
-        # Combo multiplier (only show if > 1.0)
+        # Combo multiplier (always show since no timer limit)
         if combo_multiplier > 1.0:
             combo_text = font_small.render(f"COMBO x{combo_multiplier:.1f}", True, PURPLE)
-            combo_rect = combo_text.get_rect(center=(SCREEN_WIDTH // 2, max(65, int(75 * scale_y))))
+            combo_rect = combo_text.get_rect(center=(SCREEN_WIDTH // 2, max(45, int(55 * scale_y))))
             screen.blit(combo_text, combo_rect)
-            
-            # Combo timer bar
-            if combo_timer > 0:
-                bar_width = max(80, int(120 * scale_x))
-                bar_height = max(4, int(6 * scale_y))
-                bar_x = SCREEN_WIDTH // 2 - bar_width // 2
-                bar_y = max(85, int(95 * scale_y))
-                
-                # Background bar
-                pg.draw.rect(screen, DARK_GRAY, (bar_x, bar_y, bar_width, bar_height))
-                
-                # Progress bar
-                progress = combo_timer / combo_duration
-                progress_width = int(bar_width * progress)
-                if progress_width > 0:
-                    pg.draw.rect(screen, PURPLE, (bar_x, bar_y, progress_width, bar_height))
         
         # Time survived on top-right
         time_survived = (current_time - start_time) // 1000
@@ -1632,14 +1600,6 @@ def safe_game_loop():
         time_text = font_small.render(f"Time: {minutes:02d}:{seconds:02d}", True, GREEN)
         time_rect = time_text.get_rect()
         screen.blit(time_text, (SCREEN_WIDTH - time_rect.width - max(10, int(15 * scale_x)), max(10, int(15 * scale_y))))
-        
-        # Statistics on right side
-        stats_x = SCREEN_WIDTH - max(150, int(180 * scale_x))
-        dodged_text = font_small.render(f"Dodged: {bottles_dodged}", True, WHITE)
-        screen.blit(dodged_text, (stats_x, max(35, int(45 * scale_y))))
-        
-        close_calls_text = font_small.render(f"Close: {close_calls}", True, ORANGE)
-        screen.blit(close_calls_text, (stats_x, max(55, int(65 * scale_y))))
         
         # Back button
         button_width = max(80, int(100 * scale_x))
@@ -1812,17 +1772,29 @@ def main():
                             start_fade_transition(MENU)
         
                 elif current_state == GAME_OVER:
-                    continue_btn = show_game_over_screen()
+                    play_again_btn, leaderboard_btn, menu_btn, quit_btn = show_game_over_screen()
                     
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
                             return
                         elif event.type == pg.KEYDOWN:
-                            if event.key == pg.K_ESCAPE or event.key == pg.K_RETURN:
+                            if event.key == pg.K_ESCAPE:
                                 start_fade_transition(MENU)
+                            elif event.key == pg.K_RETURN:
+                                # Enter key for quick play again
+                                reset_game()
+                                start_fade_transition(PLAYING)
                         
-                        if continue_btn.handle_event(event):
+                        # Handle button clicks
+                        if play_again_btn.handle_event(event):
+                            reset_game()
+                            start_fade_transition(PLAYING)
+                        elif leaderboard_btn.handle_event(event):
+                            start_fade_transition(LEADERBOARD)
+                        elif menu_btn.handle_event(event):
                             start_fade_transition(MENU)
+                        elif quit_btn.handle_event(event):
+                            return
             
             else:
                 # During fade transition, still render the current state but don't process input
