@@ -307,6 +307,7 @@ try:
     current_username = ""
     input_active = False
     final_score = 0
+    survival_time_seconds_final = 0
 
 except Exception as e:
     logging.error(f"Failed to initialize game: {e}")
@@ -876,7 +877,6 @@ def reset_game():
     is_on_ground = False
     drunk_x = SCREEN_WIDTH // 2 - drunk_width // 2  # Drunk guy stays centered
     lives = 9
-    start_time = pg.time.get_ticks()
     last_bottle_time = pg.time.get_ticks()
     last_left_bottle_time = pg.time.get_ticks()
     bottles = []
@@ -1263,27 +1263,26 @@ def show_game_over_screen():
     screen.blit(final_text, final_rect)
     
     # Time survived
-    current_time = pg.time.get_ticks()
-    survival_time_seconds = (current_time - start_time) // 1000
-    minutes = survival_time_seconds // 60
-    seconds = survival_time_seconds % 60
+    minutes = survival_time_seconds_final // 60
+    seconds = survival_time_seconds_final % 60
     time_text = font_medium.render(f"Time Survived: {minutes:02d}:{seconds:02d}", True, GREEN)
     time_rect = time_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + line_height))
     screen.blit(time_text, time_rect)
     
     # Buttons - scaled proportionally
+    # Buttons - stacked vertically in the center
     scale_x = SCREEN_WIDTH / BASE_WIDTH
-    button_width = max(80, int(140 * scale_x))
-    button_height = max(30, int(40 * scale_y))
-    button_spacing_x = max(10, int(20 * scale_x))
-    button_spacing_y = max(10, int(15 * scale_y))
-    
-    # Calculate button positions in a 2x2 grid
-    total_width = button_width * 2 + button_spacing_x
-    start_x = (SCREEN_WIDTH - total_width) // 2
-    buttons_start_y = start_y + line_height * 3
-    
-    # First row
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    button_width = max(80, int(200 * scale_x))
+    button_height = max(30, int(50 * scale_y))
+    button_spacing_y = max(15, int(20 * scale_y))
+
+    # Starting Y so the stack is centered vertically under the text
+    total_height = button_height * 4 + button_spacing_y * 3
+    start_x = (SCREEN_WIDTH - button_width) // 2
+    buttons_start_y = start_y + line_height * 2  # put it under the score/time text
+
+    # Create buttons stacked vertically
     play_again_button = Button(
         start_x,
         buttons_start_y,
@@ -1291,39 +1290,41 @@ def show_game_over_screen():
         button_height,
         "PLAY AGAIN",
         font_small,
-        color=GREEN,
-        hover_color=WHITE
+        color=WHITE,
+        hover_color=GREEN
     )
-    
+
     leaderboard_button = Button(
-        start_x + button_width + button_spacing_x,
-        buttons_start_y,
+        start_x,
+        buttons_start_y + (button_height + button_spacing_y) * 1,
         button_width,
         button_height,
         "LEADERBOARD",
-        font_small
+        font_small,
+        color=WHITE,
+        hover_color=YELLOW
     )
-    
-    # Second row
+
     menu_button = Button(
         start_x,
-        buttons_start_y + button_height + button_spacing_y,
+        buttons_start_y + (button_height + button_spacing_y) * 2,
         button_width,
         button_height,
         "MAIN MENU",
         font_small
     )
-    
+
     quit_button = Button(
-        start_x + button_width + button_spacing_x,
-        buttons_start_y + button_height + button_spacing_y,
+        start_x,
+        buttons_start_y + (button_height + button_spacing_y) * 3,
         button_width,
         button_height,
         "QUIT",
         font_small,
-        color=RED,
-        hover_color=ORANGE
+        color=WHITE,
+        hover_color=RED
     )
+
     
     # Update hover states
     mouse_pos = pg.mouse.get_pos()
@@ -1550,8 +1551,10 @@ def safe_game_loop():
                         if lives <= 0:
                             logging.info("Game over - no lives remaining")
                             calculate_final_score()
-                            return current_time - start_time  # Return survival time
-        
+                            global survival_time_seconds_final
+                            survival_time_seconds_final = (current_time - start_time) // 1000
+                            return survival_time_seconds_final  # Return frozen survival time
+
         # Remove bottles safely (reverse order to maintain indices)
         for i in reversed(sorted(set(bottles_to_remove))):
             if 0 <= i < len(bottles):
@@ -1723,6 +1726,8 @@ def main():
                                 start_fade_transition(MENU)
 
                 elif current_state == PLAYING:
+                    global start_time
+                    start_time = pg.time.get_ticks()
                     survival_time = safe_game_loop()
                     if survival_time == -1:  # User quit or escaped
                         start_fade_transition(MENU)
