@@ -729,56 +729,54 @@ class ScrollBar:
         """Handle mouse events for scrollbar interaction"""
         if self.thumb_height == 0:  # No scrolling needed
             return False
-            
+
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left click
                 mouse_x, mouse_y = event.pos
                 thumb_rect = self.get_thumb_rect()
-                
+
                 if thumb_rect.collidepoint(mouse_x, mouse_y):
                     # Start dragging thumb
                     self.dragging = True
                     self.drag_offset = mouse_y - self.thumb_y
                     return True
                 elif self.rect.collidepoint(mouse_x, mouse_y):
-                    # Click on track - jump to position
-                    relative_y = mouse_y - self.rect.y
-                    track_height = self.rect.height - self.thumb_height
-                    
-                    if track_height > 0:
+                    # Clicked on the track -> jump thumb toward click
+                    track_range = self.rect.height - self.thumb_height
+                    if track_range > 0:
+                        # Center thumb on click, clamped to track
+                        new_thumb_y = mouse_y - self.thumb_height // 2
+                        new_thumb_y = max(self.rect.y, min(self.rect.y + track_range, new_thumb_y))
                         scroll_progress = (new_thumb_y - self.rect.y) / track_range
-                        new_scroll = int(scroll_progress * self.total_items)
+                        new_scroll = int(scroll_progress * self.max_scroll)
                         self.scroll_position = max(0, min(self.max_scroll, new_scroll))
                         self.update_thumb()
                         return True
-        
+
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1:
                 was_dragging = self.dragging
                 self.dragging = False
                 return was_dragging
-        
+
         elif event.type == pg.MOUSEMOTION:
             if self.dragging:
                 mouse_y = event.pos[1]
+                # Move thumb with mouse, respecting drag offset
                 new_thumb_y = mouse_y - self.drag_offset
-                
                 # Constrain thumb to track
-                new_thumb_y = max(self.rect.y, min(self.rect.y + self.rect.height - self.thumb_height, new_thumb_y))
-                
-                # Calculate scroll position from thumb position
                 track_range = self.rect.height - self.thumb_height
+                new_thumb_y = max(self.rect.y, min(self.rect.y + track_range, new_thumb_y))
+                # Map thumb position -> scroll position
                 if track_range > 0:
-                    scroll_progress = relative_y / self.rect.height
-                    old_scroll = self.scroll_position
+                    scroll_progress = (new_thumb_y - self.rect.y) / track_range
                     self.scroll_position = int(scroll_progress * self.max_scroll)
                     self.scroll_position = max(0, min(self.max_scroll, self.scroll_position))
                     self.update_thumb()
-                    
-                    return True
-        
+                return True
+
         return False
-    
+
     def set_scroll_position(self, position):
         """Set scroll position directly"""
         self.scroll_position = max(0, min(self.max_scroll, position))
@@ -1312,9 +1310,10 @@ def show_bottle_config():
     return back_button, bottle_config_scrollbar, visible_bottles, list_start_y, line_spacing
 
 def recalculate_scrollbar():
-    """Recalculates the scrollbar dimensions and creates a new instance"""
     global scrollbar
-
+    if 'leaderboard' not in globals() or leaderboard is None:
+        return  # Can't build scrollbar yet
+    
     all_scores = leaderboard.get_all_scores()
     scale_x = SCREEN_WIDTH / BASE_WIDTH
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
@@ -1669,7 +1668,7 @@ def show_game_over_screen():
 def safe_game_loop():
     """Main game loop with enhanced scoring system, progressive difficulty, and dual hand throwing"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
-    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, combo_timer
+    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier
     global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
     global current_throwing_hand
     
