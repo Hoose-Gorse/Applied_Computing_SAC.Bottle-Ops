@@ -5,6 +5,10 @@ import logging
 import json
 import os
 import math
+import requests
+from io import BytesIO
+import threading
+import time
 
 # Configure logging for error handling
 logging.basicConfig(
@@ -15,6 +19,181 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
+# Import image configuration
+try:
+    from image_config import IMAGE_URLS, USE_LOCAL_IMAGES, LOCAL_IMAGE_PATHS
+except ImportError:
+    # Fallback configuration if image_config.py doesn't exist
+    IMAGE_URLS = {
+        'player': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/player.png',
+        'drunk': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/drunk.png',
+        'background': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/background.png',
+        'button_normal': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_normal.png',
+        'button_hover': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_hover.png',
+        'bottles': {
+            1: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ground.png',
+            2: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_air.png',
+            3: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_boomerang.png',
+            4: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_shatter.png',
+            5: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_molotov.png',
+            6: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_sticky.png',
+            7: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_leaky.png',
+            8: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_pill.png',
+            9: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ink.png',
+            10: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_hourglass.png',
+            11: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_caffeine.png',
+            12: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_golden.png',
+            13: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_star.png',
+            14: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ghost.png',
+            15: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_prankster.png'
+        }
+    }
+    USE_LOCAL_IMAGES = False
+    LOCAL_IMAGE_PATHS = {}
+
+class ImageManager:
+    """Manages loading and caching of game images with fallback to drawn shapes"""
+    
+    def __init__(self):
+        self.images = {}
+        self.loading_threads = {}
+        self.loading_complete = False
+        self.fallback_mode = False
+        
+        # Start loading images in background
+        self.start_image_loading()
+    
+    def start_image_loading(self):
+        """Start background thread to load all images"""
+        def load_all_images():
+            try:
+                # Load player image
+                self.load_image('player', IMAGE_URLS['player'])
+                
+                # Load drunk person image
+                self.load_image('drunk', IMAGE_URLS['drunk'])
+                
+                # Load background image
+                self.load_image('background', IMAGE_URLS['background'])
+                
+                # Load button images
+                self.load_image('button_normal', IMAGE_URLS['button_normal'])
+                self.load_image('button_hover', IMAGE_URLS['button_hover'])
+                
+                # Load bottle images
+                for bottle_id, url in IMAGE_URLS['bottles'].items():
+                    self.load_image(f'bottle_{bottle_id}', url)
+                
+                self.loading_complete = True
+                logging.info("All images loaded successfully")
+                
+            except Exception as e:
+                logging.error(f"Error loading images: {e}")
+                self.fallback_mode = True
+                self.loading_complete = True
+        
+        thread = threading.Thread(target=load_all_images, daemon=True)
+        thread.start()
+    
+    def load_image(self, key, url):
+        """Load a single image from URL or local file"""
+        try:
+            # Try local image first if enabled
+            if USE_LOCAL_IMAGES and key in LOCAL_IMAGE_PATHS:
+                local_path = LOCAL_IMAGE_PATHS[key]
+                if os.path.exists(local_path):
+                    image = pg.image.load(local_path)
+                    if image.get_alpha() is None:
+                        image = image.convert()
+                    else:
+                        image = image.convert_alpha()
+                    self.images[key] = image
+                    logging.info(f"Loaded local image: {key}")
+                    return
+            
+            # Skip loading if URL contains placeholder
+            if 'yourusername' in url or 'gabes-assets' in url:
+                logging.info(f"Skipping placeholder URL for {key}")
+                self.images[key] = None
+                return
+            
+            # Try to load from URL
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            
+            # Load image from bytes
+            image_data = BytesIO(response.content)
+            image = pg.image.load(image_data)
+            
+            # Convert to display format for better performance
+            if image.get_alpha() is None:
+                image = image.convert()
+            else:
+                image = image.convert_alpha()
+            
+            self.images[key] = image
+            logging.info(f"Loaded image from URL: {key}")
+            
+        except Exception as e:
+            logging.warning(f"Failed to load image {key}: {e}")
+            self.images[key] = None
+    
+    def get_image(self, key, fallback_surface=None):
+        """Get an image, return fallback surface if image not available"""
+        if key in self.images and self.images[key] is not None:
+            return self.images[key]
+        return fallback_surface
+    
+    def is_loading(self):
+        """Check if images are still loading"""
+        return not self.loading_complete
+    
+    def use_fallbacks(self):
+        """Check if we should use fallback shapes"""
+        return self.fallback_mode or not self.loading_complete
+
+def create_fallback_surface(width, height, color, shape='rect'):
+    """Create a fallback surface when images fail to load"""
+    surface = pg.Surface((width, height), pg.SRCALPHA)
+    
+    if shape == 'rect':
+        pg.draw.rect(surface, color, (0, 0, width, height))
+        # Add a simple border
+        pg.draw.rect(surface, (max(0, color[0] - 50), max(0, color[1] - 50), max(0, color[2] - 50)), 
+                    (0, 0, width, height), 2)
+    elif shape == 'circle':
+        pg.draw.circle(surface, color, (width//2, height//2), min(width, height)//2)
+        # Add a simple border
+        pg.draw.rect(surface, (max(0, color[0] - 50), max(0, color[1] - 50), max(0, color[2] - 50)), 
+                      (width//2, height//2), min(width, height)//2, 2)
+    
+    return surface
+
+def show_loading_screen():
+    """Show loading screen while images are being loaded"""
+    screen.fill(BLACK)
+    
+    # Title
+    title_text = font_large.render("BOTTLE OPS", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    screen.blit(title_text, title_rect)
+    
+    # Loading text
+    loading_text = font_medium.render("Loading assets...", True, BLUE)
+    loading_rect = loading_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    screen.blit(loading_text, loading_rect)
+    
+    # Progress indicator
+    if image_manager.is_loading():
+        progress_text = font_small.render("Please wait...", True, GRAY)
+    else:
+        progress_text = font_small.render("Press any key to continue", True, GREEN)
+    
+    progress_rect = progress_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT * 2 // 3))
+    screen.blit(progress_text, progress_rect)
+    
+    pg.display.flip()
 
 def safe_init():
     """Safely initialize pygame with error handling"""
@@ -395,6 +574,9 @@ try:
     bottle_config = BottleTypeConfig()
     bottle_config.load_config()  # Load any saved configurations
     
+    # Initialize image manager
+    image_manager = ImageManager()
+    
     # Fade transition variables
     fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     fade_surface.fill(BLACK)
@@ -513,15 +695,16 @@ try:
     scroll_drag_offset = 0
     
     # Game states
-    MENU = 0
-    PLAYING = 1
-    SETTINGS = 2
-    LEADERBOARD = 3
-    USERNAME_INPUT = 4
-    GAME_OVER = 5
-    BOTTLE_CONFIG = 6  # New state for bottle configuration
+    LOADING = 0
+    MENU = 1
+    PLAYING = 2
+    SETTINGS = 3
+    LEADERBOARD = 4
+    USERNAME_INPUT = 5
+    GAME_OVER = 6
+    BOTTLE_CONFIG = 7  # New state for bottle configuration
     
-    current_state = MENU
+    current_state = LOADING
     current_username = ""
     input_active = False
     final_score = 0
@@ -805,6 +988,9 @@ class Button:
         self.color = color
         self.hover_color = hover_color
         self.is_hovered = False
+        
+        # Image manager reference (will be set globally)
+        self.image_manager = None
     
     def handle_event(self, event):
         if event.type == pg.MOUSEMOTION:
@@ -820,13 +1006,38 @@ class Button:
         self.is_hovered = self.rect.collidepoint(mouse_pos)
     
     def draw(self, surface):
+        # Try to use images if available
+        if (self.image_manager and 
+            not self.image_manager.use_fallbacks()):
+            
+            # Get appropriate button image
+            if self.is_hovered:
+                button_img = self.image_manager.get_image('button_hover')
+            else:
+                button_img = self.image_manager.get_image('button_normal')
+            
+            if button_img:
+                # Scale image to button size
+                scaled_img = pg.transform.scale(button_img, (self.rect.width, self.rect.height))
+                surface.blit(scaled_img, self.rect.topleft)
+            else:
+                # Fallback to drawn button
+                self._draw_fallback(surface)
+        else:
+            # Use fallback drawn button
+            self._draw_fallback(surface)
+        
+        # Draw text on top
+        text_color = self.hover_color if self.is_hovered else self.color
+        text_surface = self.font.render(self.text, True, text_color)
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        surface.blit(text_surface, text_rect)
+    
+    def _draw_fallback(self, surface):
+        """Draw fallback button when images aren't available"""
         color = self.hover_color if self.is_hovered else self.color
         pg.draw.rect(surface, DARK_GRAY, self.rect)
         pg.draw.rect(surface, color, self.rect, 3)
-        
-        text_surface = self.font.render(self.text, True, color)
-        text_rect = text_surface.get_rect(center=self.rect.center)
-        surface.blit(text_surface, text_rect)
 
 class Bottle:
     def __init__(self, start_x, start_y, target_x, target_y, bottle_type_id=1, hand="right", is_preview_transition=False):
@@ -908,6 +1119,9 @@ class Bottle:
         self.original_image = pg.Surface((self.base_width, self.base_height), pg.SRCALPHA)
         self.original_image.fill(self.config['color'])
         
+        # Image manager reference (will be set globally)
+        self.image_manager = None
+        
         self.active = True
         self.hit_player = False  # Track if bottle hit player
         self.scored = False  # Track if bottle has been scored for dodging
@@ -964,14 +1178,23 @@ class Bottle:
         current_width = max(int(self.base_width * scale_factor), 1)
         current_height = max(int(self.base_height * scale_factor), 1)
         
-        # Scale the original image
-        scaled_image = pg.transform.scale(
-            self.original_image, 
-            (current_width, current_height)
-        )
-        
-        # Rotate the scaled image
-        rotated_image = pg.transform.rotate(scaled_image, self.rotation)
+        # Try to use bottle image if available
+        if (self.image_manager and 
+            not self.image_manager.use_fallbacks()):
+            
+            bottle_img = self.image_manager.get_image(f'bottle_{self.bottle_type_id}')
+            if bottle_img:
+                # Scale and rotate the bottle image
+                scaled_image = pg.transform.scale(bottle_img, (current_width, current_height))
+                rotated_image = pg.transform.rotate(scaled_image, self.rotation)
+            else:
+                # Fallback to colored rectangle
+                scaled_image = pg.transform.scale(self.original_image, (current_width, current_height))
+                rotated_image = pg.transform.rotate(scaled_image, self.rotation)
+        else:
+            # Use fallback colored rectangle
+            scaled_image = pg.transform.scale(self.original_image, (current_width, current_height))
+            rotated_image = pg.transform.rotate(scaled_image, self.rotation)
         
         # Position the bottle
         rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
@@ -1053,8 +1276,28 @@ class Bottle:
         distance = self.get_distance_to_player(player_x, player_y, player_width, player_height)
         return distance <= CLOSE_CALL_DISTANCE
 
-def draw_player_with_depth(surface, x, y, width, height, is_jumping):
+def draw_player_with_depth(surface, x, y, width, height, is_jumping, image_manager=None):
     """Draw player with visual depth representation based on jumping state"""
+    # Try to use player image if available
+    if (image_manager and 
+        not image_manager.use_fallbacks()):
+        
+        player_img = image_manager.get_image('player')
+        if player_img:
+            # Scale image to player size
+            scaled_img = pg.transform.scale(player_img, (width, height))
+            
+            # Apply depth effect based on jumping state
+            if is_jumping:
+                # Make image slightly transparent when jumping (behind bottles)
+                scaled_img.set_alpha(180)
+            
+            # Position the image
+            rect = scaled_img.get_rect(center=(int(x + width//2), int(y + height//2)))
+            surface.blit(scaled_img, rect.topleft)
+            return
+    
+    # Fallback to drawn player
     if is_jumping:
         # When jumping, player appears "behind" ground-level bottles
         # Use lighter colors to show they're in the background
@@ -1152,6 +1395,10 @@ def show_menu():
     leaderboard_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "LEADERBOARD", font_medium, hover_color=YELLOW)
     exit_button = Button(button_x, start_y + spacing * 4, button_width, button_height, "QUIT", font_medium, hover_color=RED)
     
+    # Set image manager for all buttons
+    for button in [play_button, settings_button, bottle_config_button, leaderboard_button, exit_button]:
+        button.image_manager = image_manager
+    
     # Update hover states for all buttons
     mouse_pos = pg.mouse.get_pos()
     play_button.update_hover(mouse_pos)
@@ -1207,6 +1454,10 @@ def show_settings():
     mouse_pos = pg.mouse.get_pos()
     fs_button.update_hover(mouse_pos)
     back_button.update_hover(mouse_pos)
+    
+    # Set image manager for buttons
+    fs_button.image_manager = image_manager
+    back_button.image_manager = image_manager
     
     fs_button.draw(screen)
     back_button.draw(screen)    
@@ -1265,17 +1516,32 @@ def show_bottle_config():
         config = bottle_config.get_bottle_config(bottle_id)
         y_pos = list_start_y + i * line_spacing
         
-        # Draw bottle preview (small colored rectangle)
+        # Draw bottle preview (small colored rectangle or image)
         preview_size = max(8, int(12 * min(scale_x, scale_y)))
         preview_rect = pg.Rect(max(20, int(30 * scale_x)), y_pos, preview_size, preview_size)
-        pg.draw.rect(screen, config['color'], preview_rect)
+        
+        # Try to use bottle image if available
+        if (image_manager and 
+            not image_manager.use_fallbacks()):
+            
+            bottle_img = image_manager.get_image(f'bottle_{bottle_id}')
+            if bottle_img:
+                # Scale image to preview size
+                scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+                screen.blit(scaled_img, preview_rect.topleft)
+            else:
+                # Fallback to colored rectangle
+                pg.draw.rect(screen, config['color'], preview_rect)
+        else:
+            # Use fallback colored rectangle
+            pg.draw.rect(screen, config['color'], preview_rect)
         
         # Draw bottle info
         text_x = preview_rect.right + max(10, int(15 * scale_x))
-        bottle_text = f"{bottle_id}. {config['name']} - Score: {config['score_gain']}"
+        bottle_text = f"{bottle_id}. {config['name']} - Score: {config['score_gain']} - Min curve: {config['min_curve']} - Max curve: {config['max_curve']} - H{config['height']} W{config['width']}"
         
         # Highlight if it has curve properties
-        color = YELLOW if config['max_curve'] > 0 else WHITE
+        color = WHITE
         
         bottle_surface = font_small.render(bottle_text, True, color)
         screen.blit(bottle_surface, (text_x, y_pos))
@@ -1301,6 +1567,9 @@ def show_bottle_config():
         font_medium,
         hover_color=ORANGE
     )
+    
+    # Set image manager for button
+    back_button.image_manager = image_manager
     
     # Update hover state
     mouse_pos = pg.mouse.get_pos()
@@ -1488,6 +1757,10 @@ def show_leaderboard():
         hover_color=ORANGE
     )
     
+    # Set image manager for buttons
+    clear_button.image_manager = image_manager
+    back_button.image_manager = image_manager
+    
     # Update hover states
     mouse_pos = pg.mouse.get_pos()
     clear_button.update_hover(mouse_pos)
@@ -1562,6 +1835,9 @@ def show_username_input():
         font_small,
         hover_color=ORANGE
     )
+    
+    # Set image manager for button
+    back_button.image_manager = image_manager
     
     # Update hover state
     mouse_pos = pg.mouse.get_pos()
@@ -1651,6 +1927,10 @@ def show_game_over_screen():
     )
 
     
+    # Set image manager for all buttons
+    for button in [play_again_button, leaderboard_button, menu_button, quit_button]:
+        button.image_manager = image_manager
+    
     # Update hover states
     mouse_pos = pg.mouse.get_pos()
     play_again_button.update_hover(mouse_pos)
@@ -1670,7 +1950,7 @@ def safe_game_loop():
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
     global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier
     global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
-    global current_throwing_hand
+    global current_throwing_hand, image_manager
     
     running = True
     frame_count = 0
@@ -1682,7 +1962,21 @@ def safe_game_loop():
         # Update difficulty based on score
         bottle_spawn_time, left_hand_spawn_time = get_current_difficulty()
         
-        screen.fill(BLACK)
+        # Try to use background image if available
+        if (image_manager and 
+            not image_manager.use_fallbacks()):
+            
+            bg_img = image_manager.get_image('background')
+            if bg_img:
+                # Scale background to screen size
+                scaled_bg = pg.transform.scale(bg_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+                screen.blit(scaled_bg, (0, 0))
+            else:
+                # Fallback to black background
+                screen.fill(BLACK)
+        else:
+            # Use fallback black background
+            screen.fill(BLACK)
         keys = pg.key.get_pressed()
         
         # Player movement - no error handling needed for basic movement
@@ -1706,9 +2000,23 @@ def safe_game_loop():
             vel_y = 0
             is_on_ground = True
         
-        # Drunk guy (stationary) - just draw it
-        drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
-        pg.draw.rect(screen, YELLOW, drunk_rect)
+        # Drunk guy (stationary) - try to use image if available
+        if (image_manager and 
+            not image_manager.use_fallbacks()):
+            
+            drunk_img = image_manager.get_image('drunk')
+            if drunk_img:
+                # Scale image to drunk person size
+                scaled_img = pg.transform.scale(drunk_img, (drunk_width, drunk_height))
+                screen.blit(scaled_img, (int(drunk_x), drunk_y))
+            else:
+                # Fallback to drawn rectangle
+                drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
+                pg.draw.rect(screen, YELLOW, drunk_rect)
+        else:
+            # Use fallback drawn rectangle
+            drunk_rect = pg.Rect(int(drunk_x), drunk_y, drunk_width, drunk_height)
+            pg.draw.rect(screen, YELLOW, drunk_rect)
         
         # Calculate hand positions for preview bottles
         scale_x = SCREEN_WIDTH / BASE_WIDTH
@@ -1758,7 +2066,22 @@ def safe_game_loop():
         if next_bottle_preview is not None:
             preview_size = max(8, int(12 * min(scale_x, scale_y)))
             preview_rect = pg.Rect(right_hand_x, right_hand_y, preview_size, preview_size)
-            pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
+            
+            # Try to use bottle image if available
+            if (image_manager and 
+                not image_manager.use_fallbacks()):
+                
+                bottle_img = image_manager.get_image(f'bottle_{next_bottle_preview["type_id"]}')
+                if bottle_img:
+                    # Scale image to preview size
+                    scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+                    screen.blit(scaled_img, preview_rect.topleft)
+                else:
+                    # Fallback to colored rectangle
+                    pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
+            else:
+                # Use fallback colored rectangle
+                pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
             
             # Check if it's time to throw the bottle from right hand
             if current_time - next_bottle_show_time >= next_bottle_throw_delay:
@@ -1772,6 +2095,7 @@ def safe_game_loop():
                     "right",
                     is_preview_transition=True  # Start at visible z
                 )
+                new_bottle.image_manager = image_manager
                 bottles.append(new_bottle)
                 
                 # Reset for next bottle
@@ -1782,7 +2106,22 @@ def safe_game_loop():
         if next_left_bottle_preview is not None:
             preview_size = max(8, int(12 * min(scale_x, scale_y)))
             preview_rect = pg.Rect(left_hand_x, left_hand_y, preview_size, preview_size)
-            pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
+            
+            # Try to use bottle image if available
+            if (image_manager and 
+                not image_manager.use_fallbacks()):
+                
+                bottle_img = image_manager.get_image(f'bottle_{next_left_bottle_preview["type_id"]}')
+                if bottle_img:
+                    # Scale image to preview size
+                    scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+                    screen.blit(scaled_img, preview_rect.topleft)
+                else:
+                    # Fallback to colored rectangle
+                    pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
+            else:
+                # Use fallback colored rectangle
+                pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
             
             # Check if it's time to throw the bottle from left hand
             if current_time - next_left_bottle_show_time >= next_left_bottle_throw_delay:
@@ -1796,6 +2135,7 @@ def safe_game_loop():
                     "left",
                     is_preview_transition=True  # Start at visible z
                 )
+                new_bottle.image_manager = image_manager
                 bottles.append(new_bottle)
                 
                 # Reset for next bottle
@@ -1901,7 +2241,7 @@ def safe_game_loop():
         for bottle in bottles_behind:
             bottle.draw(screen)
         
-        draw_player_with_depth(screen, player_x, player_y, player_width, player_height, not is_on_ground)
+        draw_player_with_depth(screen, player_x, player_y, player_width, player_height, not is_on_ground, image_manager)
         
         # Draw bottles in front of player
         for bottle in bottles_in_front:
@@ -1954,6 +2294,9 @@ def safe_game_loop():
             hover_color=ORANGE
         )
         
+        # Set image manager for button
+        back_button.image_manager = image_manager
+        
         # Update hover state for back button
         mouse_pos = pg.mouse.get_pos()
         back_button.update_hover(mouse_pos)
@@ -1984,13 +2327,13 @@ def safe_game_loop():
         pg.display.flip()
         clock.tick(60)
 
-current_username = ""
+current_username = "NEW USER"
 
 def main():
     """Main game function with menu system"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
     global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small, fade_direction, next_state
-    global bottle_config_scroll
+    global bottle_config_scroll, image_manager
 
     leaderboard = LeaderboardManager()
     
@@ -2016,7 +2359,17 @@ def main():
             
             # Only process input if not in the middle of a fade transition
             if fade_direction == 0:
-                if current_state == MENU:
+                if current_state == LOADING:
+                    show_loading_screen()
+                    
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN or event.type == pg.MOUSEBUTTONDOWN:
+                            if not image_manager.is_loading():
+                                start_fade_transition(MENU)
+                
+                elif current_state == MENU:
                     play_btn, settings_btn, bottle_config_btn, leaderboard_btn, exit_btn = show_menu()
                     
                     for event in pg.event.get():
@@ -2124,9 +2477,13 @@ def main():
                             if back_btn.handle_event(event):
                                 start_fade_transition(MENU)
                         elif event.type == pg.MOUSEMOTION:
-                            config_scrollbar.handle_event(event)
+                            if config_scrollbar.handle_event(event):
+                                # Update the scroll position during dragging
+                                bottle_config_scroll = config_scrollbar.scroll_position
                         elif event.type == pg.MOUSEBUTTONUP:
-                            config_scrollbar.handle_event(event)
+                            if config_scrollbar.handle_event(event):
+                                # Update the scroll position when dragging ends
+                                bottle_config_scroll = config_scrollbar.scroll_position
                 
                 elif current_state == BOTTLE_EDIT:
                     save_btn, back_btn = show_bottle_edit()
@@ -2197,7 +2554,9 @@ def main():
             
             else:
                 # During fade transition, still render the current state but don't process input
-                if current_state == MENU:
+                if current_state == LOADING:
+                    show_loading_screen()
+                elif current_state == MENU:
                     show_menu()
                 elif current_state == USERNAME_INPUT:
                     show_username_input()
@@ -2229,6 +2588,7 @@ def main():
             logging.info("Game shut down successfully")
         except:
             pass
+        exit(0)
 
 # Bottle editing variables and functions
 selected_bottle_id = 1
@@ -2274,7 +2634,22 @@ def show_bottle_edit():
     preview_y = SCREEN_HEIGHT // 4
     preview_color = (temp_bottle_config['color_r'], temp_bottle_config['color_g'], temp_bottle_config['color_b'])
     preview_rect = pg.Rect(preview_x, preview_y, preview_size, preview_size)
-    pg.draw.rect(screen, preview_color, preview_rect)
+    
+    # Try to use bottle image if available
+    if (image_manager and 
+        not image_manager.use_fallbacks()):
+        
+        bottle_img = image_manager.get_image(f'bottle_{selected_bottle_id}')
+        if bottle_img:
+            # Scale image to preview size
+            scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+            screen.blit(scaled_img, preview_rect.topleft)
+        else:
+            # Fallback to colored rectangle
+            pg.draw.rect(screen, preview_color, preview_rect)
+    else:
+        # Use fallback colored rectangle
+        pg.draw.rect(screen, preview_color, preview_rect)
     
     # Edit fields
     field_start_y = SCREEN_HEIGHT // 3
@@ -2285,7 +2660,7 @@ def show_bottle_edit():
         y_pos = field_start_y + i * field_spacing
         
         # Highlight current field
-        color = YELLOW if i == edit_field else WHITE
+        color = BLUE if i == edit_field else WHITE
         
         # Get current value
         current_value = temp_bottle_config[field_name]
@@ -2329,6 +2704,10 @@ def show_bottle_edit():
         font_small,
         hover_color=ORANGE
     )
+    
+    # Set image manager for buttons
+    save_button.image_manager = image_manager
+    back_button.image_manager = image_manager
     
     # Update hover states
     mouse_pos = pg.mouse.get_pos()
@@ -2410,7 +2789,7 @@ def save_bottle_config():
     logging.info(f"Saved configuration for {config['name']}")
 
 # Add new game state for bottle editing
-BOTTLE_EDIT = 7
+BOTTLE_EDIT = 8
 
 # Main execution
 if __name__ == "__main__":
