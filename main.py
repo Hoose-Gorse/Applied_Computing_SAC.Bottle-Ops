@@ -1,3 +1,4 @@
+
 import pygame as pg
 import random
 from sys import exit
@@ -2668,116 +2669,6 @@ def main():
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
                                 start_fade_transition(MENU)
-                        
-                        # Handle scrollbar events first (all event types)
-                        if scrollbar.handle_event(event):
-                            leaderboard_scroll = scrollbar.scroll_position
-                        # Handle button events
-                        elif clear_btn.handle_event(event):
-                            if len(leaderboard.get_all_scores()) > 0:
-                                leaderboard.clear_all_scores()
-                                leaderboard_scroll = 0
-                                logging.info("Leaderboard cleared by user")
-                        elif back_btn.handle_event(event):
-                            leaderboard_scroll = 0
-                            start_fade_transition(MENU)
-        
-                elif current_state == GAME_OVER:
-                    play_again_btn, leaderboard_btn, menu_btn, quit_btn = show_game_over_screen()
-                    
-                    for event in pg.event.get():
-                        if event.type == pg.QUIT:
-                            return
-                        elif event.type == pg.KEYDOWN:
-                            if event.key == pg.K_ESCAPE:
-                                start_fade_transition(MENU)
-                            elif event.key == pg.K_RETURN:
-                                # Enter key for quick play again
-                                reset_game()
-                                start_fade_transition(PLAYING)
-                        
-                        # Handle button clicks
-                        if play_again_btn.handle_event(event):
-                            reset_game()
-                            start_fade_transition(PLAYING)
-                        elif leaderboard_btn.handle_event(event):
-                            start_fade_transition(LEADERBOARD)
-                        elif menu_btn.handle_event(event):
-                            start_fade_transition(MENU)
-                        elif quit_btn.handle_event(event):
-                            return
-            
-            else:
-                # During fade transition, still render the current state but don't process input
-                if current_state == LOADING:
-                    show_loading_screen()
-                elif current_state == MENU:
-                    show_menu()
-                elif current_state == USERNAME_INPUT:
-                    show_username_input()
-                elif current_state == SETTINGS:
-                    show_settings()
-                elif current_state == BOTTLE_CONFIG:
-                    show_bottle_config()
-                elif current_state == BOTTLE_EDIT:
-                    show_bottle_edit()
-                elif current_state == LEADERBOARD:
-                    show_leaderboard()
-                elif current_state == GAME_OVER:
-                    show_game_over_screen()
-                
-                # Clear event queue during transitions to prevent input buildup
-                pg.event.clear()
-            
-            # Draw fade overlay last (on top of everything)
-            draw_fade()
-            
-            pg.display.flip()
-            clock.tick(60)
-            
-    except Exception as e:
-        logging.error(f"Error in main loop: {e}")
-    finally:
-        try:
-            pg.quit()
-            logging.info("Game shut down successfully")
-        except:
-            pass
-        exit(0)
-
-# Main execution
-if __name__ == "__main__":
-    try:
-        logging.info("Starting Bottle Ops game")
-        
-        # Example of how to use blob URLs:
-        # Uncomment and modify the following lines to set blob URLs before starting the game
-        # 
-        # blob_urls = {
-        #     'player': 'blob:http://localhost:3000/abc123...',
-        #     'drunk': 'blob:http://localhost:3000/def456...',
-        #     'background': 'blob:http://localhost:3000/ghi789...',
-        #     'button_normal': 'blob:http://localhost:3000/jkl012...',
-        #     'button_hover': 'blob:http://localhost:3000/mno345...',
-        #     'bottles': {
-        #         1: 'blob:http://localhost:3000/pqr678...',
-        #         2: 'blob:http://localhost:3000/stu901...',
-        #         # ... etc for bottles 1-15
-        #     }
-        # }
-        # setup_game_with_blob_urls(blob_urls)
-        
-        main() 
-        
-    except Exception as e:
-        logging.error(f"Fatal error: {e}")
-        
-    finally:
-        try:
-            pg.quit()
-        except:
-            pass
-        exit(0)
                                 return
                         
                         # Handle button clicks with fade transitions
@@ -2912,4 +2803,115 @@ if __name__ == "__main__":
                         if event.type == pg.QUIT:
                             return
                         elif event.type == pg.KEYDOWN:
-                            if event.key == pg.K_ESCAPE
+                            if event.key == pg.K_ESCAPE:
+                                return
+
+                        # Handle scrollbar events first (all event types)
+                        if scrollbar.handle_event(event):
+                            leaderboard_scroll = scrollbar.scroll_position
+                        # Handle button events
+                        elif clear_btn.handle_event(event):
+                            if len(leaderboard.get_all_scores()) > 0:
+                                leaderboard.clear_all_scores()
+                                leaderboard_scroll = 0
+                                logging.info("Leaderboard cleared by user")
+                        elif back_btn.handle_event(event):
+                            leaderboard_scroll = 0
+                            start_fade_transition(MENU)
+        
+                elif current_state == GAME_OVER:
+                    play_again_btn, leaderboard_btn, menu_btn, quit_btn = show_game_over_screen()
+                    
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            return
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE:
+                                start_fade_transition(MENU)
+                            elif event.key == pg.K_RETURN:
+                                # Enter key for quick play again
+                                reset_game()
+                                start_fade_transition(PLAYING)
+                        
+                        # Handle button clicks
+                        if play_again_btn.handle_event(event):
+                            reset_game()
+                            start_fade_transition(PLAYING)
+                        elif leaderboard_btn.handle_event(event):
+                            start_fade_transition(LEADERBOARD)
+                        elif menu_btn.handle_event(event):
+                            start_fade_transition(MENU)
+                        elif quit_btn.handle_event(event):
+                            return
+            
+            else:
+                # During fade transition, still render the current state but don't process input
+                if current_state == LOADING:
+                    show_loading_screen()
+                elif current_state == MENU:
+                    show_menu()
+                elif current_state == USERNAME_INPUT:
+                    show_username_input()
+                elif current_state == SETTINGS:
+                    show_settings()
+                elif current_state == BOTTLE_CONFIG:
+                    show_bottle_config()
+                elif current_state == BOTTLE_EDIT:
+                    show_bottle_edit()
+                elif current_state == LEADERBOARD:
+                    show_leaderboard()
+                elif current_state == GAME_OVER:
+                    show_game_over_screen()
+                
+                # Clear event queue during transitions to prevent input buildup
+                pg.event.clear()
+            
+            # Draw fade overlay last (on top of everything)
+            draw_fade()
+            
+            pg.display.flip()
+            clock.tick(60)
+            
+    except Exception as e:
+        logging.error(f"Error in main loop: {e}")
+    finally:
+        try:
+            pg.quit()
+            logging.info("Game shut down successfully")
+        except:
+            pass
+        exit(0)
+
+# Main execution
+if __name__ == "__main__":
+    try:
+        logging.info("Starting Bottle Ops game")
+        
+        # Example of how to use blob URLs:
+        # Uncomment and modify the following lines to set blob URLs before starting the game
+        # 
+        # blob_urls = {
+        #     'player': 'blob:http://localhost:3000/abc123...',
+        #     'drunk': 'blob:http://localhost:3000/def456...',
+        #     'background': 'blob:http://localhost:3000/ghi789...',
+        #     'button_normal': 'blob:http://localhost:3000/jkl012...',
+        #     'button_hover': 'blob:http://localhost:3000/mno345...',
+        #     'bottles': {
+        #         1: 'blob:http://localhost:3000/pqr678...',
+        #         2: 'blob:http://localhost:3000/stu901...',
+        #         # ... etc for bottles 1-15
+        #     }
+        # }
+        # setup_game_with_blob_urls(blob_urls)
+        
+        main() 
+        
+    except Exception as e:
+        logging.error(f"Fatal error: {e}")
+        
+    finally:
+        try:
+            pg.quit()
+        except:
+            pass
+        exit(0)
