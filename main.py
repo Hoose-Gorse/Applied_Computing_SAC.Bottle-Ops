@@ -21,36 +21,33 @@ logging.basicConfig(
 )
 
 # Import image configuration
-try:
-    from image_config import IMAGE_URLS, USE_LOCAL_IMAGES, LOCAL_IMAGE_PATHS
-except ImportError:
-    # Fallback configuration if image_config.py doesn't exist
-    IMAGE_URLS = {
-        'player': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/player.png',
-        'drunk': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/drunk.png',
-        'background': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/background.png',
-        'button_normal': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_normal.png',
-        'button_hover': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_hover.png',
-        'bottles': {
-            1: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ground.png',
-            2: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_air.png',
-            3: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_boomerang.png',
-            4: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_shatter.png',
-            5: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_molotov.png',
-            6: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_sticky.png',
-            7: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_leaky.png',
-            8: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_pill.png',
-            9: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ink.png',
-            10: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_hourglass.png',
-            11: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_caffeine.png',
-            12: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_golden.png',
-            13: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_star.png',
-            14: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ghost.png',
-            15: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_prankster.png'
-        }
+# Fallback configuration if image_config.py doesn't exist
+IMAGE_URLS = {
+    'player': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/player.png',
+    'drunk': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/drunk.png',
+    'background': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/background.png',
+    'button_normal': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_normal.png',
+    'button_hover': 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/button_hover.png',
+    'bottles': {
+        1: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ground.png',
+        2: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_air.png',
+        3: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_boomerang.png',
+        4: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_shatter.png',
+        5: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_molotov.png',
+        6: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_sticky.png',
+        7: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_leaky.png',
+        8: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_pill.png',
+        9: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ink.png',
+        10: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_hourglass.png',
+        11: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_caffeine.png',
+        12: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_golden.png',
+        13: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_star.png',
+        14: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_ghost.png',
+        15: 'https://raw.githubusercontent.com/yourusername/gabes-assets/main/bottle_prankster.png'
     }
-    USE_LOCAL_IMAGES = False
-    LOCAL_IMAGE_PATHS = {}
+}
+USE_LOCAL_IMAGES = False
+LOCAL_IMAGE_PATHS = {}
 
 class ImageManager:
     """Manages loading and caching of game images with fallback to drawn shapes"""
