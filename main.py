@@ -23,10 +23,10 @@ logging.basicConfig(
 # Image configuration - now supports raw URLs
 IMAGE_URLS = {
     'player': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",  # Will be set from raw URLs if available
-    'drunk': None,
+    'drunk': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/flower.jpeg?raw=true",
     'background': None,
-    'button_normal': None,
-    'button_hover': None,
+    'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/flower.jpeg?raw=true",
+    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/white.png?raw=true",
     'bottles': {
         1: "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/normal-beer-bottle.png?raw=true",
         2: "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/Helium-beer-bottle.png?raw=true",
@@ -2907,38 +2907,7 @@ def main():
 if __name__ == "__main__":
     try:
         logging.info("Starting Bottle Ops game")
-        
-        # Example of how to use raw URLs:
-        # Uncomment and modify the following lines to set raw URLs before starting the game
-        # 
-        # raw_urls = {
-        #     'player': 'https://example.com/images/player.png',
-        #     'drunk': 'https://example.com/images/drunk.png',
-        #     'background': 'https://example.com/images/background.jpg',
-        #     'button_normal': 'https://example.com/images/button_normal.png',
-        #     'button_hover': 'https://example.com/images/button_hover.png',
-        #     'bottles': {
-        #         1: 'https://example.com/images/bottle1.png',
-        #         2: 'https://example.com/images/bottle2.png',
-        #         3: 'https://example.com/images/bottle3.png',
-        #         4: 'https://example.com/images/bottle4.png',
-        #         5: 'https://example.com/images/bottle5.png',
-        #         6: 'https://example.com/images/bottle6.png',
-        #         7: 'https://example.com/images/bottle7.png',
-        #         8: 'https://example.com/images/bottle8.png',
-        #         9: 'https://example.com/images/bottle9.png',
-        #         10: 'https://example.com/images/bottle10.png',
-        #         11: 'https://example.com/images/bottle11.png',
-        #         12: 'https://example.com/images/bottle12.png',
-        #         13: 'https://example.com/images/bottle13.png',
-        #         14: 'https://example.com/images/bottle14.png',
-        #         15: 'https://example.com/images/bottle15.png',
-        #     }
-        # }
-        # setup_game_with_raw_urls(raw_urls)
-        
         main() 
-        
     except Exception as e:
         logging.error(f"Fatal error: {e}")
         
