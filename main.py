@@ -1,4 +1,3 @@
-
 import pygame as pg
 import random
 from sys import exit
@@ -8,6 +7,8 @@ import os
 import math
 import threading
 import time
+import urllib.request
+from io import BytesIO
 
 # Configure logging for error handling
 logging.basicConfig(
@@ -19,9 +20,9 @@ logging.basicConfig(
     ]
 )
 
-# Image configuration - now supports blob URLs
+# Image configuration - now supports raw URLs
 IMAGE_URLS = {
-    'player': None,  # Will be set from blob URLs if available
+    'player': None,  # Will be set from raw URLs if available
     'drunk': None,
     'background': None,
     'button_normal': None,
@@ -33,9 +34,9 @@ IMAGE_URLS = {
     }
 }
 
-# Function to set blob URLs (call this before starting the game)
+# Function to set raw URLs (call this before starting the game)
 def set_image_urls(urls_dict):
-    """Set image URLs from blob URLs or any other source"""
+    """Set image URLs from raw URLs or any other source"""
     global IMAGE_URLS
     if 'player' in urls_dict:
         IMAGE_URLS['player'] = urls_dict['player']
@@ -105,56 +106,52 @@ class ImageManager:
         thread = threading.Thread(target=load_all_images, daemon=True)
         thread.start()
     
-    def load_image_from_blob(self, blob_url):
-        """Load image from blob URL using pygame's image loading"""
+    def load_image_from_url(self, url):
+        """Load image from raw URL using urllib"""
         try:
-            # For blob URLs, we'll need to handle them differently
-            # In a web environment, you might need to use a different approach
-            # This is a placeholder for the actual blob URL handling
+            # Set a user agent to avoid blocking
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
             
-            # If running in a web environment with blob URLs,
-            # you might need to use fetch API or similar web technologies
-            # For now, we'll assume local file paths or skip blob URLs
+            with urllib.request.urlopen(req, timeout=10) as response:
+                image_data = response.read()
             
-            if blob_url.startswith('blob:'):
-                # In a real web environment, you'd need JavaScript integration
-                # to convert blob URLs to image data
-                logging.info(f"Blob URL detected but not supported in this environment: {blob_url}")
-                return None
-            elif blob_url.startswith('data:'):
-                # Handle data URLs
-                import base64
-                from io import BytesIO
-                
-                # Extract the base64 data
-                header, data = blob_url.split(',', 1)
-                image_data = base64.b64decode(data)
-                
-                # Load image from bytes
-                image = pg.image.load(BytesIO(image_data))
-                if image.get_alpha() is None:
-                    image = image.convert()
-                else:
-                    image = image.convert_alpha()
-                return image
+            # Load image from bytes
+            image = pg.image.load(BytesIO(image_data))
+            if image.get_alpha() is None:
+                image = image.convert()
             else:
-                # Try to load as regular file path
-                if os.path.exists(blob_url):
-                    image = pg.image.load(blob_url)
-                    if image.get_alpha() is None:
-                        image = image.convert()
-                    else:
-                        image = image.convert_alpha()
-                    return image
-                
-            return None
+                image = image.convert_alpha()
+            return image
             
         except Exception as e:
-            logging.warning(f"Failed to load image from blob URL: {e}")
+            logging.warning(f"Failed to load image from URL: {e}")
+            return None
+    
+    def load_image_from_data_url(self, data_url):
+        """Load image from data URL"""
+        try:
+            import base64
+            
+            # Extract the base64 data
+            header, data = data_url.split(',', 1)
+            image_data = base64.b64decode(data)
+            
+            # Load image from bytes
+            image = pg.image.load(BytesIO(image_data))
+            if image.get_alpha() is None:
+                image = image.convert()
+            else:
+                image = image.convert_alpha()
+            return image
+            
+        except Exception as e:
+            logging.warning(f"Failed to load image from data URL: {e}")
             return None
     
     def load_image(self, key, url):
-        """Load a single image from URL, blob URL, or local file"""
+        """Load a single image from URL, data URL, or local file"""
         try:
             # Try local image first if enabled
             if USE_LOCAL_IMAGES and key in LOCAL_IMAGE_PATHS:
@@ -175,20 +172,33 @@ class ImageManager:
                 self.images[key] = None
                 return
             
-            # Try to load from blob URL or data URL
-            if url.startswith(('blob:', 'data:')):
-                image = self.load_image_from_blob(url)
+            # Handle different URL types
+            if url.startswith('data:'):
+                # Handle data URLs
+                image = self.load_image_from_data_url(url)
                 if image:
                     self.images[key] = image
-                    logging.info(f"Loaded image from blob/data URL: {key}")
+                    logging.info(f"Loaded image from data URL: {key}")
                     return
                 else:
-                    logging.warning(f"Failed to load blob/data URL for {key}")
+                    logging.warning(f"Failed to load data URL for {key}")
                     self.images[key] = None
                     return
             
-            # Try to load as local file path
-            if os.path.exists(url):
+            elif url.startswith(('http://', 'https://')):
+                # Handle web URLs
+                image = self.load_image_from_url(url)
+                if image:
+                    self.images[key] = image
+                    logging.info(f"Loaded image from web URL: {key}")
+                    return
+                else:
+                    logging.warning(f"Failed to load web URL for {key}")
+                    self.images[key] = None
+                    return
+            
+            elif os.path.exists(url):
+                # Try to load as local file path
                 image = pg.image.load(url)
                 if image.get_alpha() is None:
                     image = image.convert()
@@ -1436,32 +1446,29 @@ def calculate_final_score():
     final_score = score  # No time bonus - just the base score
     logging.info(f"Final score: {final_score}")
 
-# Continue with the rest of the game functions...
-# [The rest of the code follows the same pattern with blob URL support]
-
-# Example usage function for setting blob URLs
-def setup_game_with_blob_urls(blob_urls):
+# Example usage function for setting raw URLs
+def setup_game_with_raw_urls(raw_urls):
     """
-    Set up the game with blob URLs for images
+    Set up the game with raw URLs for images
     
     Args:
-        blob_urls (dict): Dictionary containing blob URLs for game images
+        raw_urls (dict): Dictionary containing raw URLs for game images
         Example:
         {
-            'player': 'blob:http://localhost:3000/abc123...',
-            'drunk': 'blob:http://localhost:3000/def456...',
-            'background': 'blob:http://localhost:3000/ghi789...',
-            'button_normal': 'blob:http://localhost:3000/jkl012...',
-            'button_hover': 'blob:http://localhost:3000/mno345...',
+            'player': 'https://example.com/player.png',
+            'drunk': 'https://example.com/drunk.png',
+            'background': 'https://example.com/background.png',
+            'button_normal': 'https://example.com/button_normal.png',
+            'button_hover': 'https://example.com/button_hover.png',
             'bottles': {
-                1: 'blob:http://localhost:3000/pqr678...',
-                2: 'blob:http://localhost:3000/stu901...',
+                1: 'https://example.com/bottle1.png',
+                2: 'https://example.com/bottle2.png',
                 # ... etc for bottles 1-15
             }
         }
     """
-    set_image_urls(blob_urls)
-    logging.info("Game set up with blob URLs")
+    set_image_urls(raw_urls)
+    logging.info("Game set up with raw URLs")
 
 def show_menu():
     """Display the main menu"""
@@ -2619,6 +2626,8 @@ def save_bottle_config():
 
 # Add new game state for bottle editing
 BOTTLE_EDIT = 8
+# Add new game state for bottle editing
+BOTTLE_EDIT = 8
 
 def main():
     """Main game function with menu system"""
@@ -2887,22 +2896,34 @@ if __name__ == "__main__":
     try:
         logging.info("Starting Bottle Ops game")
         
-        # Example of how to use blob URLs:
-        # Uncomment and modify the following lines to set blob URLs before starting the game
+        # Example of how to use raw URLs:
+        # Uncomment and modify the following lines to set raw URLs before starting the game
         # 
-        # blob_urls = {
-        #     'player': 'blob:http://localhost:3000/abc123...',
-        #     'drunk': 'blob:http://localhost:3000/def456...',
-        #     'background': 'blob:http://localhost:3000/ghi789...',
-        #     'button_normal': 'blob:http://localhost:3000/jkl012...',
-        #     'button_hover': 'blob:http://localhost:3000/mno345...',
+        # raw_urls = {
+        #     'player': 'https://example.com/images/player.png',
+        #     'drunk': 'https://example.com/images/drunk.png',
+        #     'background': 'https://example.com/images/background.jpg',
+        #     'button_normal': 'https://example.com/images/button_normal.png',
+        #     'button_hover': 'https://example.com/images/button_hover.png',
         #     'bottles': {
-        #         1: 'blob:http://localhost:3000/pqr678...',
-        #         2: 'blob:http://localhost:3000/stu901...',
-        #         # ... etc for bottles 1-15
+        #         1: 'https://example.com/images/bottle1.png',
+        #         2: 'https://example.com/images/bottle2.png',
+        #         3: 'https://example.com/images/bottle3.png',
+        #         4: 'https://example.com/images/bottle4.png',
+        #         5: 'https://example.com/images/bottle5.png',
+        #         6: 'https://example.com/images/bottle6.png',
+        #         7: 'https://example.com/images/bottle7.png',
+        #         8: 'https://example.com/images/bottle8.png',
+        #         9: 'https://example.com/images/bottle9.png',
+        #         10: 'https://example.com/images/bottle10.png',
+        #         11: 'https://example.com/images/bottle11.png',
+        #         12: 'https://example.com/images/bottle12.png',
+        #         13: 'https://example.com/images/bottle13.png',
+        #         14: 'https://example.com/images/bottle14.png',
+        #         15: 'https://example.com/images/bottle15.png',
         #     }
         # }
-        # setup_game_with_blob_urls(blob_urls)
+        # setup_game_with_raw_urls(raw_urls)
         
         main() 
         
@@ -2915,3 +2936,5 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
+
+
