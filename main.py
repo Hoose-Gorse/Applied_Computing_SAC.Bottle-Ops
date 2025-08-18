@@ -22,13 +22,13 @@ logging.basicConfig(
 
 # Image configuration - now supports raw URLs
 IMAGE_URLS = {
-    'player': None,  # Will be set from raw URLs if available
+    'player': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",  # Will be set from raw URLs if available
     'drunk': None,
     'background': None,
     'button_normal': None,
     'button_hover': None,
     'bottles': {
-        1: None, 2: None, 3: None, 4: None, 5: None,
+        1: "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/normal-beer-bottle.png?raw=true", 2: "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/Helium-beer-bottle.png?raw=true", 3: None, 4: None, 5: None,
         6: None, 7: None, 8: None, 9: None, 10: None,
         11: None, 12: None, 13: None, 14: None, 15: None
     }
