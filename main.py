@@ -71,15 +71,15 @@ IMAGE_URLS = {
     
     # Special effects
     'effect_shatter': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/shatter_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/shatter_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/shatter_3.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/shattter-pile.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/shattter-pile.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/shattter-pile.png?raw=true"
     ],
     'effect_explosion': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/explosion_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/explosion_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/explosion_3.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/effects/explosion_4.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/explosion.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/explosion.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/explosion.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/bottles/explosion.png?raw=true"
     ],
     
     # Button images
@@ -3301,3 +3301,5 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
+
+
