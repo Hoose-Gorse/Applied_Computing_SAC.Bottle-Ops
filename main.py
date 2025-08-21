@@ -25,43 +25,43 @@ IMAGE_URLS = {
     # Player animations
     'player_idle': [
         "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_2.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
     ],
     'player_run': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/RUN_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/RUN_2.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
     ],
     'player_jump': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/JUMP_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/JUMP_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/JUMP_3.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
     ],
     
     # Drunk guy animations
     'drunk_idle': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/IDLE_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/IDLE_3.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true"
     ],
     'drunk_left_throw': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/LEFT_THROW_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/LEFT_THROW_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/LEFT_THROW_3.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true"
     ],
     'drunk_right_throw': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/RIGHT_THROW_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/RIGHT_THROW_2.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/RIGHT_THROW_3.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true"
     ],
     
     # Backgrounds for different screens
-    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu_bg.png?raw=true",
-    'background_game': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/game_bg.png?raw=true",
-    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/settings_bg.png?raw=true",
-    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/leaderboard_bg.png?raw=true",
+    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_game': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
     
     # UI Text Images (optional replacements for rendered text)
-    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/title.png?raw=true",
+    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/Bottle_Ops_Logo.png?raw=true",
     'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/play_button.png?raw=true",
     'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/settings_button.png?raw=true",
     'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/leaderboard_button.png?raw=true",
@@ -3301,5 +3301,3 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
-
-
