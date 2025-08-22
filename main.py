@@ -197,6 +197,11 @@ class ImageManager:
         self.loading_complete = False
         self.fallback_mode = False
         
+        # Loading progress tracking
+        self.total_assets = 0
+        self.loaded_assets = 0
+        self.loading_progress = 0.0
+        
         # Start loading images in background
         self.start_image_loading()
     
@@ -204,7 +209,10 @@ class ImageManager:
         """Start background thread to load all images and create animations"""
         def load_all_images():
             try:
-                # Load single images
+                # Calculate total assets to load
+                self.total_assets = 0
+                
+                # Count single images
                 single_images = ['background_menu', 'background_game', 'background_settings', 
                                'background_leaderboard', 'text_title', 'text_play', 'text_settings',
                                'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
@@ -212,19 +220,40 @@ class ImageManager:
                 
                 for key in single_images:
                     if key in IMAGE_URLS and IMAGE_URLS[key]:
-                        self.load_image(key, IMAGE_URLS[key])
+                        self.total_assets += 1
                 
-                # Load animation sequences
+                # Count animation frames
                 animation_sequences = ['player_idle', 'player_run', 'player_jump', 
                                      'drunk_idle', 'drunk_left_throw', 'drunk_right_throw',
                                      'effect_shatter', 'effect_explosion']
                 
                 for seq_key in animation_sequences:
                     if seq_key in IMAGE_URLS:
+                        self.total_assets += len(IMAGE_URLS[seq_key])
+                
+                # Count bottle images
+                for bottle_id, url in IMAGE_URLS['bottles'].items():
+                    if url:
+                        self.total_assets += 1
+                
+                logging.info(f"Total assets to load: {self.total_assets}")
+                
+                # Load single images
+                for key in single_images:
+                    if key in IMAGE_URLS and IMAGE_URLS[key]:
+                        self.load_image(key, IMAGE_URLS[key])
+                        self.loaded_assets += 1
+                        self.loading_progress = self.loaded_assets / self.total_assets
+                
+                # Load animation sequences
+                for seq_key in animation_sequences:
+                    if seq_key in IMAGE_URLS:
                         frames = []
                         for i, url in enumerate(IMAGE_URLS[seq_key]):
                             frame_key = f"{seq_key}_frame_{i}"
                             self.load_image(frame_key, url)
+                            self.loaded_assets += 1
+                            self.loading_progress = self.loaded_assets / self.total_assets
                             if frame_key in self.images and self.images[frame_key]:
                                 frames.append(self.images[frame_key])
                         
@@ -241,8 +270,11 @@ class ImageManager:
                 for bottle_id, url in IMAGE_URLS['bottles'].items():
                     if url:
                         self.load_image(f'bottle_{bottle_id}', url)
+                        self.loaded_assets += 1
+                        self.loading_progress = self.loaded_assets / self.total_assets
                 
                 self.loading_complete = True
+                self.loading_progress = 1.0
                 logging.info("All images and animations loaded successfully")
                 
             except Exception as e:
@@ -373,6 +405,14 @@ class ImageManager:
     def is_loading(self):
         """Check if images are still loading"""
         return not self.loading_complete
+    
+    def get_loading_progress(self):
+        """Get current loading progress as a percentage (0.0 to 1.0)"""
+        return self.loading_progress
+    
+    def get_loading_percentage(self):
+        """Get current loading progress as a percentage string"""
+        return f"{int(self.loading_progress * 100)}%"
     
     def use_fallbacks(self):
         """Check if we should use fallback shapes"""
@@ -877,6 +917,17 @@ class ScrollBar:
                     self.update_thumb()
                 return True
 
+        elif event.type == pg.MOUSEWHEEL:
+            # Handle mouse wheel scrolling (pygame 2.0+)
+            if event.y > 0:  # Scroll up
+                self.scroll_position = max(0, self.scroll_position - 1)
+                self.update_thumb()
+                return True
+            elif event.y < 0:  # Scroll down
+                self.scroll_position = min(self.max_scroll, self.scroll_position + 1)
+                self.update_thumb()
+                return True
+
         return False
 
     def set_scroll_position(self, position):
@@ -898,6 +949,26 @@ class ScrollBar:
         thumb_color = LIGHT_GRAY if not self.dragging else WHITE
         pg.draw.rect(surface, thumb_color, thumb_rect)
         pg.draw.rect(surface, GRAY, thumb_rect, 1)
+        
+        # Draw scroll indicators (arrows) if there's room
+        if self.rect.height > 40:
+            # Up arrow
+            up_arrow_y = self.rect.y + 5
+            up_arrow_points = [
+                (self.rect.centerx, up_arrow_y),
+                (self.rect.centerx - 4, up_arrow_y + 6),
+                (self.rect.centerx + 4, up_arrow_y + 6)
+            ]
+            pg.draw.polygon(surface, GRAY, up_arrow_points)
+            
+            # Down arrow
+            down_arrow_y = self.rect.bottom - 11
+            down_arrow_points = [
+                (self.rect.centerx, down_arrow_y + 6),
+                (self.rect.centerx - 4, down_arrow_y),
+                (self.rect.centerx + 4, down_arrow_y)
+            ]
+            pg.draw.polygon(surface, GRAY, down_arrow_points)
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=None, hover_color=None, text_key=None):
@@ -1768,17 +1839,21 @@ def show_loading_screen():
     
     # Animated progress
     if image_manager.is_loading():
-        # Animate progress bar while loading
-        loading_animation_timer += loading_animation_speed
-        loading_progress = (loading_animation_timer % 100) / 100.0
+        # Get actual loading progress
+        actual_progress = image_manager.get_loading_progress()
         
-        # Draw animated progress
-        progress_width = int(progress_bar_width * loading_progress)
+        # Draw actual progress bar
+        progress_width = int(progress_bar_width * actual_progress)
         pg.draw.rect(screen, (0, 150, 255), (progress_bar_x, progress_bar_y, progress_width, progress_bar_height))
         
-        # Animated dots
-        dots = "." * ((loading_animation_timer // 20) % 4)
-        progress_text = font_small.render(f"Loading{dots}", True, (128, 128, 128))
+        # Show percentage text
+        percentage_text = image_manager.get_loading_percentage()
+        progress_text = font_small.render(f"Loading... {percentage_text}", True, (128, 128, 128))
+        
+        # Show spacebar skip option
+        skip_text = font_small.render("Press SPACEBAR to skip loading", True, (255, 165, 0))  # Orange color
+        skip_rect = skip_text.get_rect(center=(SCREEN_WIDTH // 2, progress_bar_y + progress_bar_height + 60))
+        screen.blit(skip_text, skip_rect)
     else:
         # Show full progress bar when done
         pg.draw.rect(screen, (0, 255, 100), (progress_bar_x, progress_bar_y, progress_bar_width, progress_bar_height))
@@ -1971,6 +2046,11 @@ def show_bottle_config():
     inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(20, int(30 * scale_y))))
     screen.blit(inst_text, inst_rect)
     
+    # Scroll instructions
+    scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
+    scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(40, int(50 * scale_y))))
+    screen.blit(scroll_inst_text, scroll_inst_rect)
+    
     # Back button
     button_width = max(80, int(120 * scale_x))
     button_height = max(30, int(40 * scale_y))
@@ -2123,6 +2203,11 @@ def show_leaderboard():
         empty_text = font_medium.render("No scores yet!", True, GRAY)
         empty_rect = empty_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         screen.blit(empty_text, empty_rect)
+    else:
+        # Scroll instructions for leaderboard
+        scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
+        scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height + max(20, int(30 * scale_y))))
+        screen.blit(scroll_inst_text, scroll_inst_rect)
     
     # Draw scrollbar only if needed
     if len(all_scores) > max_visible_scores:
@@ -3008,7 +3093,14 @@ def main():
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
                             return
-                        elif event.type == pg.KEYDOWN or event.type == pg.MOUSEBUTTONDOWN:
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_SPACE:
+                                # Skip loading screen with spacebar (optional)
+                                start_fade_transition(MENU)
+                            elif not image_manager.is_loading():
+                                # Any other key or mouse click only works when loading is complete
+                                start_fade_transition(MENU)
+                        elif event.type == pg.MOUSEBUTTONDOWN:
                             if not image_manager.is_loading():
                                 start_fade_transition(MENU)
                 
@@ -3102,11 +3194,35 @@ def main():
                                 start_fade_transition(MENU)
                             elif event.key == pg.K_UP:
                                 bottle_config_scroll = max(0, bottle_config_scroll - 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
                             elif event.key == pg.K_DOWN:
                                 bottle_config_scroll = min(14, bottle_config_scroll + 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_PAGEUP:
+                                # Page up - scroll by multiple items
+                                bottle_config_scroll = max(0, bottle_config_scroll - 5)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_PAGEDOWN:
+                                # Page down - scroll by multiple items
+                                bottle_config_scroll = min(14, bottle_config_scroll + 5)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_HOME:
+                                # Home - go to top
+                                bottle_config_scroll = 0
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_END:
+                                # End - go to bottom
+                                bottle_config_scroll = 14
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
                         elif event.type == pg.MOUSEBUTTONDOWN:
                             # Handle scrollbar first
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 bottle_config_scroll = config_scrollbar.scroll_position
                             # Handle bottle selection clicks
                             elif event.button == 1:  # Left click
@@ -3125,13 +3241,23 @@ def main():
                             if back_btn.handle_event(event):
                                 start_fade_transition(MENU)
                         elif event.type == pg.MOUSEMOTION:
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 # Update the scroll position during dragging
                                 bottle_config_scroll = config_scrollbar.scroll_position
                         elif event.type == pg.MOUSEBUTTONUP:
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 # Update the scroll position when dragging ends
                                 bottle_config_scroll = config_scrollbar.scroll_position
+                        elif event.type == pg.MOUSEWHEEL:
+                            # Handle mouse wheel scrolling
+                            if event.y > 0:  # Scroll up
+                                bottle_config_scroll = max(0, bottle_config_scroll - 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.y < 0:  # Scroll down
+                                bottle_config_scroll = min(14, bottle_config_scroll + 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
                 
                 elif current_state == BOTTLE_EDIT:
                     save_btn, back_btn = show_bottle_edit()
@@ -3161,9 +3287,40 @@ def main():
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
                                 start_fade_transition(MENU)
+                            elif event.key == pg.K_UP:
+                                leaderboard_scroll = max(0, leaderboard_scroll - 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_DOWN:
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_PAGEUP:
+                                # Page up - scroll by multiple items
+                                leaderboard_scroll = max(0, leaderboard_scroll - 5)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_PAGEDOWN:
+                                # Page down - scroll by multiple items
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 5)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_HOME:
+                                # Home - go to top
+                                leaderboard_scroll = 0
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_END:
+                                # End - go to bottom
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = max(0, len(all_scores) - max_visible_scores)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
 
                         # Handle scrollbar events first (all event types)
-                        if scrollbar.handle_event(event):
+                        if scrollbar and scrollbar.handle_event(event):
                             leaderboard_scroll = scrollbar.scroll_position
                         # Handle button events
                         elif clear_btn.handle_event(event):
@@ -3174,6 +3331,17 @@ def main():
                         elif back_btn.handle_event(event):
                             leaderboard_scroll = 0
                             start_fade_transition(MENU)
+                        elif event.type == pg.MOUSEWHEEL:
+                            # Handle mouse wheel scrolling
+                            all_scores = leaderboard.get_all_scores()
+                            if event.y > 0:  # Scroll up
+                                leaderboard_scroll = max(0, leaderboard_scroll - 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.y < 0:  # Scroll down
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
         
                 elif current_state == GAME_OVER:
                     play_again_btn, leaderboard_btn, menu_btn, quit_btn = show_game_over_screen()
