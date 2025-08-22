@@ -1068,15 +1068,15 @@ class Bottle:
         
         # Target positioning based on bottle type
         if self.bottle_type == "air":
-            # Air bottles target the jumping z-plane
+            # Air bottles target the jumping z-plane - ensure they pass through player's Y position
             self.target_x = target_x
-            self.target_y = target_y - max(30, int(50 * scale_y))  # Higher target for jump bottles
-            self.target_z = 0.6  # Closer target for air bottles
+            self.target_y = target_y  # Keep original target Y to ensure bottles pass through player
+            self.target_z = 2.5  # Much higher target to ensure bottles travel far past player
         else:
             # Ground bottles target the ground z-plane
             self.target_x = target_x
             self.target_y = target_y
-            self.target_z = 0.4  # Closer target for ground bottles
+            self.target_z = 2.0  # Much higher target to ensure bottles travel far past player
         
         # Z-axis properties for enhanced 3D effect
         if is_preview_transition:
@@ -1087,7 +1087,7 @@ class Bottle:
         
         # Hand-specific properties with bottle-specific curve values
         if hand == "left":
-            self.z_speed = 0.008  # Faster movement for left hand
+            self.z_speed = 0.015  # Faster movement for left hand
             # Use bottle-specific curve values
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -1098,7 +1098,7 @@ class Bottle:
                 self.curve_direction = 0
                 self.curve_peak_z = 0
         else:
-            self.z_speed = 0.01  # Faster speed for right hand
+            self.z_speed = 0.02  # Faster speed for right hand
             # Right hand can also have curves now based on bottle config
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -1110,7 +1110,9 @@ class Bottle:
                 self.curve_peak_z = 0
         
         # Calculate movement per frame - ensure smooth movement
-        self.total_frames = max(60, int((self.target_z - self.z) / self.z_speed))  # Minimum 60 frames for smooth movement
+        # Account for the 3x speed multiplier used in update()
+        actual_z_speed = self.z_speed * 3
+        self.total_frames = max(30, int((self.target_z - self.z) / actual_z_speed))  # Faster movement
         if self.total_frames > 0:
             self.dx = (self.target_x - self.start_x) / self.total_frames
             self.dy = (self.target_y - self.start_y) / self.total_frames
@@ -1143,7 +1145,7 @@ class Bottle:
         self.frame_count += 1
         
         # Move along z-axis (simulating depth) - faster movement
-        self.z += self.z_speed * 2  # Double the z-speed for faster movement
+        self.z += self.z_speed * 3  # Triple the z-speed for faster movement
         
         # Calculate curve offset for bottles with curve properties
         curve_offset_x = 0
@@ -1229,9 +1231,9 @@ class Bottle:
         
         # Player has different z-positions when jumping vs on ground
         if player_is_jumping and self.bottle_type == "air":
-            return (self.z >= 0.5 and self.z <= 0.7)  # Air collision zone
+            return (self.z >= 0.5 and self.z <= 1.0)  # Air collision zone - covers player area
         elif not player_is_jumping and self.bottle_type == "ground":
-            return (self.z >= 0.3 and self.z <= 0.5)  # Ground collision zone
+            return (self.z >= 0.3 and self.z <= 0.8)  # Ground collision zone - covers player area
         
         return False
 
@@ -2794,7 +2796,7 @@ def safe_game_loop():
                 right_hand_x + preview_size // 2,
                 right_hand_y + preview_size // 2,
                 player_x + player_width // 2,
-                player_base_y + player_height // 2,
+                player_base_y + player_height + 30,  # Target below the player
                 right_hand_preview['type_id'],
                 "right",
                 is_preview_transition=True
@@ -2822,7 +2824,7 @@ def safe_game_loop():
                 left_hand_x + preview_size // 2,
                 left_hand_y + preview_size // 2,
                 player_x + player_width // 2,
-                player_base_y + player_height // 2,
+                player_base_y + player_height + 30,  # Target below the player
                 left_hand_preview['type_id'],
                 "left",
                 is_preview_transition=True
@@ -2881,10 +2883,10 @@ def safe_game_loop():
                 # Determine current player z-range based on jumping state
                 if is_on_ground:
                     current_player_z_start = 0.3
-                    current_player_z_end = 0.5
+                    current_player_z_end = 0.8
                 else:
                     current_player_z_start = 0.5
-                    current_player_z_end = 0.7
+                    current_player_z_end = 1.0
                 
                 # Separate bottles by z-position for proper layering
                 if bottle.z < current_player_z_start:
