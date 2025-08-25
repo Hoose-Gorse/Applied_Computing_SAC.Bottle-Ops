@@ -1168,8 +1168,8 @@ class Bottle:
         if self.z >= self.target_z + 0.05:  # Smaller buffer past target
             return True
         
-        # Check if bottle is completely off-screen with better scaling
-        scale_factor = (self.z ** 1.2) * 8  # Reduced scaling factor for less extreme growth
+        # Check if bottle is completely off-screen with better scaling (50% smaller)
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         max_size = max(self.base_width, self.base_height) * scale_factor
         
@@ -1185,7 +1185,8 @@ class Bottle:
             return
         
         # Calculate size based on z-position - scaled dynamically with better scaling
-        scale_factor = (self.z ** 1.2) * (8 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        # Make bottles 50% smaller by reducing the scaling factor
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         
         current_width = max(int(self.base_width * scale_factor), 1)
@@ -1231,9 +1232,9 @@ class Bottle:
         
         # Player has different z-positions when jumping vs on ground
         if player_is_jumping and self.bottle_type == "air":
-            return (self.z >= 0.5 and self.z <= 1.0)  # Air collision zone - covers player area
+            return (self.z >= 0.3 and self.z <= 1.2)  # Expanded air collision zone
         elif not player_is_jumping and self.bottle_type == "ground":
-            return (self.z >= 0.3 and self.z <= 0.8)  # Ground collision zone - covers player area
+            return (self.z >= 0.2 and self.z <= 1.0)  # Expanded ground collision zone
         
         return False
 
@@ -1242,8 +1243,8 @@ class Bottle:
         if not self.active or not self.is_in_player_collision_zone(player_is_jumping):
             return pg.Rect(0, 0, 0, 0)
         
-        # Use exact same scaling logic as visual drawing
-        scale_factor = (self.z ** 1.2) * (8 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        # Use exact same scaling logic as visual drawing (50% smaller)
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         
         current_width = max(int(self.base_width * scale_factor), 1)
@@ -2882,10 +2883,10 @@ def safe_game_loop():
             else:
                 # Determine current player z-range based on jumping state
                 if is_on_ground:
-                    current_player_z_start = 0.3
-                    current_player_z_end = 0.8
+                    current_player_z_start = 0.2
+                    current_player_z_end = 1.0
                 else:
-                    current_player_z_start = 0.5
+                    current_player_z_start = 0.3
                     current_player_z_end = 1.0
                 
                 # Separate bottles by z-position for proper layering
