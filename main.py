@@ -1,3 +1,4 @@
+
 import pygame as pg
 import random
 from sys import exit
@@ -1433,9 +1434,9 @@ def get_scaled_values():
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     
     # Player dimensions - scaled
-    player_width = max(80, int(120 * scale_x))
-    player_height = max(60, int(67.5 * scale_y))
-    player_base_y = SCREEN_HEIGHT - max(50, int(75 * scale_y))
+    player_width = max(60, int(120 * scale_x))
+    player_height = max(40, int(80 * scale_y))
+    player_base_y = SCREEN_HEIGHT - max(100, int(150 * scale_y))
     
     # Drunk guy dimensions - scaled
     drunk_width = max(125, int(200 * scale_x))
@@ -3602,3 +3603,4 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
+
