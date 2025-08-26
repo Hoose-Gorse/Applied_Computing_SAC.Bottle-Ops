@@ -55,18 +55,18 @@ IMAGE_URLS = {
     ],
     
     # Backgrounds for different screens
-    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
     'background_game': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
-    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
-    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
+    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
     
     # UI Text Images (optional replacements for rendered text)
     'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/Bottle_Ops_Logo.png?raw=true",
-    'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/play_button.png?raw=true",
-    'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/settings_button.png?raw=true",
-    'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/leaderboard_button.png?raw=true",
-    'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/quit_button.png?raw=true",
-    'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/back_button.png?raw=true",
+    'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/play-button.png?raw=true",
+    'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/setting-button.png?raw=true",
+    'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/leaderboard-button.png?raw=true",
+    'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/quit-button.png?raw=true",
+    'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/back.png?raw=true",
     'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/game_over.png?raw=true",
     
     # Special effects
@@ -83,8 +83,8 @@ IMAGE_URLS = {
     ],
     
     # Button images
-    'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/flower.jpeg?raw=true",
-    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/white.png?raw=true",
+    'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/buttons-background.png?raw=true",
+    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/buttons-background.png?raw=true",
     
     # Bottles (existing)
     'bottles': {
@@ -1433,18 +1433,18 @@ def get_scaled_values():
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     
     # Player dimensions - scaled
-    player_width = max(20, int(30 * scale_x))
-    player_height = max(30, int(45 * scale_y))
+    player_width = max(80, int(120 * scale_x))
+    player_height = max(60, int(67.5 * scale_y))
     player_base_y = SCREEN_HEIGHT - max(50, int(75 * scale_y))
     
     # Drunk guy dimensions - scaled
-    drunk_width = max(25, int(40 * scale_x))
-    drunk_height = max(40, int(60 * scale_y))
-    drunk_y = max(30, int(50 * scale_y))
+    drunk_width = max(125, int(200 * scale_x))
+    drunk_height = max(120, int(240 * scale_y))
+    drunk_y = max(100, int(200 * scale_y))
     
     # Physics - scaled to maintain consistent gameplay feel
     player_speed = max(3, int(5 * scale_x))
-    jump_power = max(-8, int(-12 * scale_y / BASE_HEIGHT * 600))  # Negative because up is negative
+    jump_power = max(-16, int(-12 * scale_y / BASE_HEIGHT * 600))  # Negative because up is negative
     gravity = max(0.3, 0.5 * scale_y / BASE_HEIGHT * 600)
 
 def get_current_difficulty():
@@ -3494,16 +3494,16 @@ fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 fade_surface.fill((0, 0, 0))
 
 # Game variables (will be calculated dynamically)
-player_width = 30
-player_height = 45
+player_width = 90
+player_height = 90
 player_base_y = SCREEN_HEIGHT - 75
 player_x = SCREEN_WIDTH // 2 - player_width // 2
 player_y = player_base_y
 vel_y = 0
 is_on_ground = True
 player_speed = 5
-jump_power = -12
-gravity = 0.5
+jump_power = -24000000
+gravity = 0.1
 
 # Drunk guy variables
 drunk_width = 40
@@ -3520,10 +3520,10 @@ drunk_throwing_timer = 0
 drunk_throw_duration = 30  # frames
 
 # 3D depth zones for collision detection
-player_z_ground_start = 0.0
-player_z_ground_end = 0.3
-player_z_air_start = 0.7
-player_z_air_end = 1.0
+player_z_ground_start = -100.0
+player_z_ground_end = 100.0
+player_z_air_start = -100.0
+player_z_air_end = 100.0
 
 # Game state variables
 lives = 9
