@@ -1,4 +1,3 @@
-
 import pygame as pg
 import random
 from sys import exit
@@ -25,17 +24,17 @@ logging.basicConfig(
 IMAGE_URLS = {
     # Player animations
     'player_idle': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-down.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-down.png?raw=true"
     ],
     'player_run': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png"
     ],
     'player_jump': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-jumping.png?raw=true"
     ],
     
     # Drunk guy animations
@@ -3603,4 +3602,3 @@ if __name__ == "__main__":
         except:
             pass
         exit(0)
-
