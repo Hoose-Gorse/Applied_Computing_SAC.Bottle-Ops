@@ -55,13 +55,13 @@ IMAGE_URLS = {
     ],
     
     # Backgrounds for different screens
-    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
+    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
     'background_game': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
-    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
-    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/menu-background.png?raw=true",
+    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
+    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
     
     # UI Text Images (optional replacements for rendered text)
-    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/Bottle_Ops_Logo.png?raw=true",
+    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/bottle-ops-white.png?raw=true",
     'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/play-button.png?raw=true",
     'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/setting-button.png?raw=true",
     'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/leaderboard-button.png?raw=true",
@@ -84,7 +84,7 @@ IMAGE_URLS = {
     
     # Button images
     'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/buttons-background.png?raw=true",
-    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/buttons-background.png?raw=true",
+    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/button-background-hover-thing.png?raw=true",
     
     # Bottles (existing)
     'bottles': {
@@ -2135,7 +2135,8 @@ def show_leaderboard():
     box_height = 40 + scores_area_height + 2 * box_margin
 
     outline_rect = pg.Rect(box_x, box_y, box_width, box_height)
-    pg.draw.rect(screen, GRAY, outline_rect, max(2, int(3 * min(scale_x, scale_y))))
+    pg.draw.rect(screen, WHITE, outline_rect, max(2, int(3 * min(scale_x, scale_y))))
+    pg.draw.rect(screen, BLACK, outline_rect, 0)
     
     # Calculate how many scores can fit in the grey box
     available_height = box_height - 2 * box_margin
@@ -3559,7 +3560,7 @@ MIN_LEFT_SPAWN_TIME = 300  # Minimum left hand spawn time
 CLOSE_CALL_DISTANCE = 80  # pixels
 combo_multiplier = 1.0
 COMBO_INCREMENT = 0.1
-MAX_COMBO = 5.0
+MAX_COMBO = 10.0
 
 # Leaderboard
 leaderboard = None
