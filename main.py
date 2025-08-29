@@ -1071,7 +1071,7 @@ class Bottle:
             # Air bottles target the jumping z-plane - ensure they pass through player's Y position
             self.target_x = target_x
             self.target_y = target_y  # Keep original target Y to ensure bottles pass through player
-            self.target_z = 2.5  # Much higher target to ensure bottles travel far past player
+            self.target_z = 2.0  # Much higher target to ensure bottles travel far past player
         else:
             # Ground bottles target the ground z-plane
             self.target_x = target_x
@@ -1081,13 +1081,13 @@ class Bottle:
         # Z-axis properties for enhanced 3D effect
         if is_preview_transition:
             # Preview bottles start at a small but visible z to maintain visibility
-            self.z = 0.05
+            self.z = 0.2
         else:
             self.z = 0.2  # Start closer to prevent instant teleporting
         
         # Hand-specific properties with bottle-specific curve values
         if hand == "left":
-            self.z_speed = 0.015  # Faster movement for left hand
+            self.z_speed = 0.008  # Faster movement for left hand
             # Use bottle-specific curve values
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -1098,7 +1098,7 @@ class Bottle:
                 self.curve_direction = 0
                 self.curve_peak_z = 0
         else:
-            self.z_speed = 0.02  # Faster speed for right hand
+            self.z_speed = 0.01  # Faster speed for right hand
             # Right hand can also have curves now based on bottle config
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -1111,7 +1111,7 @@ class Bottle:
         
         # Calculate movement per frame - ensure smooth movement
         # Account for the 3x speed multiplier used in update()
-        actual_z_speed = self.z_speed * 3
+        actual_z_speed = self.z_speed * 3.5
         self.total_frames = max(30, int((self.target_z - self.z) / actual_z_speed))  # Faster movement
         if self.total_frames > 0:
             self.dx = (self.target_x - self.start_x) / self.total_frames
@@ -1685,8 +1685,7 @@ def draw_animated_player(surface, x, y, width, height):
             scaled_frame.set_alpha(180)
         
         # Flip the frame based on direction
-        if not player_facing_right:
-            scaled_frame = pg.transform.flip(scaled_frame, True, False)
+        scaled_frame = pg.transform.flip(scaled_frame, player_facing_right, False)
         
         rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
         surface.blit(scaled_frame, rect.topleft)
@@ -2708,7 +2707,7 @@ def safe_game_loop():
         
         # Update drunk animation state
         update_drunk_animation()
-        
+        global player_facing_right
         # Player movement
         if keys[pg.K_LEFT] or keys[pg.K_a]:
             player_x = max(0, player_x - player_speed)
