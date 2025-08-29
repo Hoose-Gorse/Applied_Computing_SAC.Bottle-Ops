@@ -28,8 +28,8 @@ IMAGE_URLS = {
         "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-down.png?raw=true"
     ],
     'player_run': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png?raw=true"
     ],
     'player_jump': [
         "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png?raw=true",
@@ -1232,9 +1232,9 @@ class Bottle:
         
         # Player has different z-positions when jumping vs on ground
         if player_is_jumping and self.bottle_type == "air":
-            return (self.z >= 0.3 and self.z <= 1.2)  # Expanded air collision zone
+            return (self.z >= 1.4 and self.z <= 1.8)  # Expanded air collision zone
         elif not player_is_jumping and self.bottle_type == "ground":
-            return (self.z >= 0.2 and self.z <= 1.0)  # Expanded ground collision zone
+            return (self.z >= 1.4 and self.z <= 1.8)  # Expanded ground collision zone
         
         return False
 
@@ -2887,7 +2887,7 @@ def safe_game_loop():
                     current_player_z_start = 0.2
                     current_player_z_end = 1.0
                 else:
-                    current_player_z_start = 0.3
+                    current_player_z_start = 0.2
                     current_player_z_end = 1.0
                 
                 # Separate bottles by z-position for proper layering
