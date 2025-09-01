@@ -24,17 +24,17 @@ logging.basicConfig(
 IMAGE_URLS = {
     # Player animations
     'player_idle': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-down.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-down.png?raw=true"
     ],
     'player_run': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png?raw=true"
     ],
     'player_jump': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/IDLE_1.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-start-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-mid-jump.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/player/cat-left-jumping.png?raw=true"
     ],
     
     # Drunk guy animations
@@ -55,19 +55,20 @@ IMAGE_URLS = {
     ],
     
     # Backgrounds for different screens
-    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
     'background_game': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
-    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
-    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/background-main.png?raw=true",
+    'background_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
+    'background_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/main-menu-background.png?raw=true",
     
     # UI Text Images (optional replacements for rendered text)
-    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/Bottle_Ops_Logo.png?raw=true",
-    'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/play_button.png?raw=true",
-    'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/settings_button.png?raw=true",
-    'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/leaderboard_button.png?raw=true",
-    'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/quit_button.png?raw=true",
-    'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/back_button.png?raw=true",
-    'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/game_over.png?raw=true",
+    'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/bottle-ops-white.png?raw=true",
+    'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/play-button.png?raw=true",
+    'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/setting-button.png?raw=true",
+    'text_bottle_config': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/bottle-config-button.png?raw=true",
+    'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/leaderboard-button.png?raw=true",
+    'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/quit-button.png?raw=true",
+    'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/back.png?raw=true",
+    'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/Game-over.png?raw=true",
     
     # Special effects
     'effect_shatter': [
@@ -83,8 +84,8 @@ IMAGE_URLS = {
     ],
     
     # Button images
-    'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/flower.jpeg?raw=true",
-    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/white.png?raw=true",
+    'button_normal': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/buttons-background.png?raw=true",
+    'button_hover': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/button-background-hover-thing.png?raw=true",
     
     # Bottles (existing)
     'bottles': {
@@ -197,6 +198,11 @@ class ImageManager:
         self.loading_complete = False
         self.fallback_mode = False
         
+        # Loading progress tracking
+        self.total_assets = 0
+        self.loaded_assets = 0
+        self.loading_progress = 0.0
+        
         # Start loading images in background
         self.start_image_loading()
     
@@ -204,27 +210,51 @@ class ImageManager:
         """Start background thread to load all images and create animations"""
         def load_all_images():
             try:
-                # Load single images
+                # Calculate total assets to load
+                self.total_assets = 0
+                
+                # Count single images
                 single_images = ['background_menu', 'background_game', 'background_settings', 
-                               'background_leaderboard', 'text_title', 'text_play', 'text_settings',
+                               'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
                                'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
                                'button_normal', 'button_hover']
                 
                 for key in single_images:
                     if key in IMAGE_URLS and IMAGE_URLS[key]:
-                        self.load_image(key, IMAGE_URLS[key])
+                        self.total_assets += 1
                 
-                # Load animation sequences
+                # Count animation frames
                 animation_sequences = ['player_idle', 'player_run', 'player_jump', 
                                      'drunk_idle', 'drunk_left_throw', 'drunk_right_throw',
                                      'effect_shatter', 'effect_explosion']
                 
                 for seq_key in animation_sequences:
                     if seq_key in IMAGE_URLS:
+                        self.total_assets += len(IMAGE_URLS[seq_key])
+                
+                # Count bottle images
+                for bottle_id, url in IMAGE_URLS['bottles'].items():
+                    if url:
+                        self.total_assets += 1
+                
+                logging.info(f"Total assets to load: {self.total_assets}")
+                
+                # Load single images
+                for key in single_images:
+                    if key in IMAGE_URLS and IMAGE_URLS[key]:
+                        self.load_image(key, IMAGE_URLS[key])
+                        self.loaded_assets += 1
+                        self.loading_progress = self.loaded_assets / self.total_assets
+                
+                # Load animation sequences
+                for seq_key in animation_sequences:
+                    if seq_key in IMAGE_URLS:
                         frames = []
                         for i, url in enumerate(IMAGE_URLS[seq_key]):
                             frame_key = f"{seq_key}_frame_{i}"
                             self.load_image(frame_key, url)
+                            self.loaded_assets += 1
+                            self.loading_progress = self.loaded_assets / self.total_assets
                             if frame_key in self.images and self.images[frame_key]:
                                 frames.append(self.images[frame_key])
                         
@@ -241,8 +271,11 @@ class ImageManager:
                 for bottle_id, url in IMAGE_URLS['bottles'].items():
                     if url:
                         self.load_image(f'bottle_{bottle_id}', url)
+                        self.loaded_assets += 1
+                        self.loading_progress = self.loaded_assets / self.total_assets
                 
                 self.loading_complete = True
+                self.loading_progress = 1.0
                 logging.info("All images and animations loaded successfully")
                 
             except Exception as e:
@@ -373,6 +406,14 @@ class ImageManager:
     def is_loading(self):
         """Check if images are still loading"""
         return not self.loading_complete
+    
+    def get_loading_progress(self):
+        """Get current loading progress as a percentage (0.0 to 1.0)"""
+        return self.loading_progress
+    
+    def get_loading_percentage(self):
+        """Get current loading progress as a percentage string"""
+        return f"{int(self.loading_progress * 100)}%"
     
     def use_fallbacks(self):
         """Check if we should use fallback shapes"""
@@ -748,6 +789,38 @@ class LeaderboardManager:
         """Clear all scores from leaderboard"""
         self.scores = []
         self.save_scores()
+    
+    def add_default_scores(self):
+        """Add default scores for testing"""
+        default_scores = [
+            {"username": "Player1", "score": 15000},
+            {"username": "Player2", "score": 12500},
+            {"username": "Player3", "score": 11000},
+            {"username": "Player4", "score": 9500},
+            {"username": "Player5", "score": 8200},
+            {"username": "Player6", "score": 7800},
+            {"username": "Player7", "score": 6500},
+            {"username": "Player8", "score": 5900},
+            {"username": "Player9", "score": 5200},
+            {"username": "Player10", "score": 4800},
+            {"username": "Player11", "score": 4200},
+            {"username": "Player12", "score": 3800},
+            {"username": "Player13", "score": 3400},
+            {"username": "Player14", "score": 3100},
+            {"username": "Player15", "score": 2800},
+            {"username": "Player16", "score": 2500},
+            {"username": "Player17", "score": 2200},
+            {"username": "Player18", "score": 1900},
+            {"username": "Player19", "score": 1600},
+            {"username": "Player20", "score": 1300}
+        ]
+        
+        # Only add if no scores exist
+        if len(self.scores) == 0:
+            self.scores = default_scores
+            self.scores.sort(key=lambda x: x['score'], reverse=True)
+            self.save_scores()
+            logging.info("Added 20 default scores to leaderboard")
 
 class ScrollBar:
     def __init__(self, x, y, width, height, total_items, visible_items):
@@ -807,14 +880,21 @@ class ScrollBar:
                     # Clicked on the track -> jump thumb toward click
                     track_range = self.rect.height - self.thumb_height
                     if track_range > 0:
-                        # Center thumb on click, clamped to track
-                        new_thumb_y = mouse_y - self.thumb_height // 2
-                        new_thumb_y = max(self.rect.y, min(self.rect.y + track_range, new_thumb_y))
-                        scroll_progress = (new_thumb_y - self.rect.y) / track_range
+                        # Calculate click position relative to track
+                        click_y = mouse_y - self.rect.y
+                        scroll_progress = click_y / self.rect.height
                         new_scroll = int(scroll_progress * self.max_scroll)
                         self.scroll_position = max(0, min(self.max_scroll, new_scroll))
                         self.update_thumb()
                         return True
+            elif event.button == 4:  # Mouse wheel up
+                self.scroll_position = max(0, self.scroll_position - 1)
+                self.update_thumb()
+                return True
+            elif event.button == 5:  # Mouse wheel down
+                self.scroll_position = min(self.max_scroll, self.scroll_position + 1)
+                self.update_thumb()
+                return True
 
         elif event.type == pg.MOUSEBUTTONUP:
             if event.button == 1:
@@ -838,6 +918,17 @@ class ScrollBar:
                     self.update_thumb()
                 return True
 
+        elif event.type == pg.MOUSEWHEEL:
+            # Handle mouse wheel scrolling (pygame 2.0+)
+            if event.y > 0:  # Scroll up
+                self.scroll_position = max(0, self.scroll_position - 1)
+                self.update_thumb()
+                return True
+            elif event.y < 0:  # Scroll down
+                self.scroll_position = min(self.max_scroll, self.scroll_position + 1)
+                self.update_thumb()
+                return True
+
         return False
 
     def set_scroll_position(self, position):
@@ -859,6 +950,26 @@ class ScrollBar:
         thumb_color = LIGHT_GRAY if not self.dragging else WHITE
         pg.draw.rect(surface, thumb_color, thumb_rect)
         pg.draw.rect(surface, GRAY, thumb_rect, 1)
+        
+        # Draw scroll indicators (arrows) if there's room
+        if self.rect.height > 40:
+            # Up arrow
+            up_arrow_y = self.rect.y + 5
+            up_arrow_points = [
+                (self.rect.centerx, up_arrow_y),
+                (self.rect.centerx - 4, up_arrow_y + 6),
+                (self.rect.centerx + 4, up_arrow_y + 6)
+            ]
+            pg.draw.polygon(surface, GRAY, up_arrow_points)
+            
+            # Down arrow
+            down_arrow_y = self.rect.bottom - 11
+            down_arrow_points = [
+                (self.rect.centerx, down_arrow_y + 6),
+                (self.rect.centerx - 4, down_arrow_y),
+                (self.rect.centerx + 4, down_arrow_y)
+            ]
+            pg.draw.polygon(surface, GRAY, down_arrow_points)
 
 class Button:
     def __init__(self, x, y, width, height, text, font, color=None, hover_color=None, text_key=None):
@@ -958,26 +1069,26 @@ class Bottle:
         
         # Target positioning based on bottle type
         if self.bottle_type == "air":
-            # Air bottles target the jumping z-plane
+            # Air bottles target the jumping z-plane - ensure they pass through player's Y position
             self.target_x = target_x
-            self.target_y = target_y - max(30, int(50 * scale_y))  # Higher target for jump bottles
-            self.target_z = (player_z_air_start + player_z_air_end) / 2  # Middle of air z-plane
+            self.target_y = target_y  # Keep original target Y to ensure bottles pass through player
+            self.target_z = 2.0  # Much higher target to ensure bottles travel far past player
         else:
             # Ground bottles target the ground z-plane
             self.target_x = target_x
             self.target_y = target_y
-            self.target_z = (player_z_ground_start + player_z_ground_end) / 2  # Middle of ground z-plane
+            self.target_z = 2.0  # Much higher target to ensure bottles travel far past player
         
         # Z-axis properties for enhanced 3D effect
         if is_preview_transition:
             # Preview bottles start at a small but visible z to maintain visibility
-            self.z = 0.1
+            self.z = 0.2
         else:
-            self.z = 2
+            self.z = 0.2  # Start closer to prevent instant teleporting
         
         # Hand-specific properties with bottle-specific curve values
         if hand == "left":
-            self.z_speed = 0.006  # Slower movement for left hand
+            self.z_speed = 0.008  # Faster movement for left hand
             # Use bottle-specific curve values
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -988,7 +1099,7 @@ class Bottle:
                 self.curve_direction = 0
                 self.curve_peak_z = 0
         else:
-            self.z_speed = 0.008  # Normal speed for right hand
+            self.z_speed = 0.01  # Faster speed for right hand
             # Right hand can also have curves now based on bottle config
             if self.config['max_curve'] > 0:
                 self.curve_strength = random.uniform(self.config['min_curve'], self.config['max_curve'])
@@ -999,8 +1110,10 @@ class Bottle:
                 self.curve_direction = 0
                 self.curve_peak_z = 0
         
-        # Calculate movement per frame
-        self.total_frames = int((self.target_z - self.z) / self.z_speed)
+        # Calculate movement per frame - ensure smooth movement
+        # Account for the 3x speed multiplier used in update()
+        actual_z_speed = self.z_speed * 3.5
+        self.total_frames = max(30, int((self.target_z - self.z) / actual_z_speed))  # Faster movement
         if self.total_frames > 0:
             self.dx = (self.target_x - self.start_x) / self.total_frames
             self.dy = (self.target_y - self.start_y) / self.total_frames
@@ -1023,14 +1136,17 @@ class Bottle:
         self.active = True
         self.hit_player = False  # Track if bottle hit player
         self.scored = False  # Track if bottle has been scored for dodging
+        self.frame_count = 0  # Track frames for smooth movement
 
     def update(self):
         """Update bottle position and state"""
         if not self.active:
             return True
         
-        # Move along z-axis (simulating depth)
-        self.z += self.z_speed
+        self.frame_count += 1
+        
+        # Move along z-axis (simulating depth) - faster movement
+        self.z += self.z_speed * 3  # Triple the z-speed for faster movement
         
         # Calculate curve offset for bottles with curve properties
         curve_offset_x = 0
@@ -1040,21 +1156,21 @@ class Bottle:
             if progress <= 1.0:
                 # Peak curve at curve_peak_z
                 curve_progress = min(1.0, progress / self.curve_peak_z) if self.curve_peak_z > 0 else progress
-                curve_offset_x = math.sin(curve_progress * math.pi) * self.curve_strength * self.curve_direction * SCREEN_WIDTH * 0.2
+                curve_offset_x = math.sin(curve_progress * math.pi) * self.curve_strength * self.curve_direction * SCREEN_WIDTH * 0.1
         
         # Move towards target position (with curve if applicable)
-        self.x += self.dx + (curve_offset_x * self.z_speed * 10)  # Apply curve gradually
+        self.x += self.dx + (curve_offset_x * 0.05)  # Apply curve more smoothly
         self.y += self.dy
         
         # Update rotation
         self.rotation = (self.rotation + self.rotation_speed) % 360
         
         # Remove bottle if it has gone past the target z
-        if self.z >= self.target_z + 0.1:  # Small buffer past target
+        if self.z >= self.target_z + 0.05:  # Smaller buffer past target
             return True
         
-        # Check if bottle is completely off-screen
-        scale_factor = (self.z ** 1.8) * 15  # Adjusted scaling for current screen
+        # Check if bottle is completely off-screen with better scaling (50% smaller)
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         max_size = max(self.base_width, self.base_height) * scale_factor
         
@@ -1069,8 +1185,9 @@ class Bottle:
         if not self.active or self.z <= 0:
             return
         
-        # Calculate size based on z-position - scaled dynamically
-        scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        # Calculate size based on z-position - scaled dynamically with better scaling
+        # Make bottles 50% smaller by reducing the scaling factor
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         
         current_width = max(int(self.base_width * scale_factor), 1)
@@ -1097,9 +1214,10 @@ class Bottle:
         # Position the bottle
         rect = rotated_image.get_rect(center=(int(self.x), int(self.y)))
         
-        # Only draw if on screen
+        # Only draw if on screen and bottle is visible
         if (rect.right > 0 and rect.left < SCREEN_WIDTH and 
-            rect.bottom > 0 and rect.top < SCREEN_HEIGHT):
+            rect.bottom > 0 and rect.top < SCREEN_HEIGHT and
+            current_width > 0 and current_height > 0):
             surface.blit(rotated_image, rect.topleft)
 
     def is_in_player_collision_zone(self, player_is_jumping):
@@ -1115,11 +1233,9 @@ class Bottle:
         
         # Player has different z-positions when jumping vs on ground
         if player_is_jumping and self.bottle_type == "air":
-            return (self.z >= player_z_air_start and 
-                    self.z <= player_z_air_end)
+            return (self.z >= 1.4 and self.z <= 1.8)  # Expanded air collision zone
         elif not player_is_jumping and self.bottle_type == "ground":
-            return (self.z >= player_z_ground_start and 
-                    self.z <= player_z_ground_end)
+            return (self.z >= 1.4 and self.z <= 1.8)  # Expanded ground collision zone
         
         return False
 
@@ -1128,8 +1244,8 @@ class Bottle:
         if not self.active or not self.is_in_player_collision_zone(player_is_jumping):
             return pg.Rect(0, 0, 0, 0)
         
-        # Use exact same scaling logic as visual drawing
-        scale_factor = (self.z ** 1.8) * (15 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))
+        # Use exact same scaling logic as visual drawing (50% smaller)
+        scale_factor = (self.z ** 1.2) * (4 * min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT))  # Reduced from 8 to 4 (50% smaller)
         scale_factor = max(scale_factor, 0.1)
         
         current_width = max(int(self.base_width * scale_factor), 1)
@@ -1190,7 +1306,7 @@ def set_image_urls(urls_dict):
     
     # Update single images
     single_keys = ['background_menu', 'background_game', 'background_settings', 
-                   'background_leaderboard', 'text_title', 'text_play', 'text_settings',
+                   'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
                    'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
                    'button_normal', 'button_hover']
     
@@ -1241,9 +1357,10 @@ def safe_init():
 def create_display(width, height, caption):
     """Safely create display with error handling"""
     try:
-        screen = pg.display.set_mode((width, height))
+        # Create window as resizable from the start to enable maximize button
+        screen = pg.display.set_mode((width, height), pg.RESIZABLE)
         pg.display.set_caption(caption)
-        logging.info(f"Display created: {width}x{height}")
+        logging.info(f"Display created: {width}x{height} (resizable)")
         return screen
     except Exception as e:
         logging.error(f"Failed to create display: {e}")
@@ -1263,11 +1380,11 @@ def load_font(font_name, size):
 
 def toggle_fullscreen():
     """Toggle fullscreen mode safely"""
-    global is_fullscreen, screen
+    global is_fullscreen, screen, SCREEN_WIDTH, SCREEN_HEIGHT, fade_surface
     
     try:
         if is_fullscreen:
-            # Switch to windowed mode
+            # Switch to windowed mode - preserve resizable state
             screen = pg.display.set_mode((BASE_WIDTH, BASE_HEIGHT), pg.RESIZABLE)
             is_fullscreen = False
             logging.info("Switched to windowed mode")
@@ -1278,11 +1395,48 @@ def toggle_fullscreen():
             logging.info("Switched to fullscreen mode")
         
         # Update screen dimensions after mode change
-        update_screen_dimensions(screen.get_width(), screen.get_height())
+        SCREEN_WIDTH = screen.get_width()
+        SCREEN_HEIGHT = screen.get_height()
+        update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+        
+        # Recreate fade surface with new dimensions
+        fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        fade_surface.fill((0, 0, 0))
+        
         return True
         
     except Exception as e:
         logging.error(f"Failed to toggle fullscreen: {e}")
+        return False
+
+def restore_window_state():
+    """Restore window to a proper state if needed"""
+    global screen, SCREEN_WIDTH, SCREEN_HEIGHT
+    
+    try:
+        # Get current display info
+        info = pg.display.Info()
+        current_w = info.current_w
+        current_h = info.current_h
+        
+        # Only restore if there's a significant mismatch or if we're not in fullscreen
+        # and the window should be resizable but isn't
+        if not is_fullscreen:
+            # In windowed mode, ensure we have the resizable flag
+            if current_w != SCREEN_WIDTH or current_h != SCREEN_HEIGHT:
+                # Recreate the window with proper dimensions and resizable flag
+                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.RESIZABLE)
+                logging.info(f"Window state restored: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+        else:
+            # In fullscreen mode, ensure we're actually fullscreen
+            if current_w != SCREEN_WIDTH or current_h != SCREEN_HEIGHT:
+                screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
+                logging.info("Fullscreen state restored")
+                
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to restore window state: {e}")
         return False
 
 def update_screen_dimensions(width, height):
@@ -1310,18 +1464,18 @@ def get_scaled_values():
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     
     # Player dimensions - scaled
-    player_width = max(20, int(30 * scale_x))
-    player_height = max(30, int(45 * scale_y))
-    player_base_y = SCREEN_HEIGHT - max(50, int(75 * scale_y))
+    player_width = max(60, int(120 * scale_x))
+    player_height = max(40, int(80 * scale_y))
+    player_base_y = SCREEN_HEIGHT - max(100, int(150 * scale_y))
     
     # Drunk guy dimensions - scaled
-    drunk_width = max(25, int(40 * scale_x))
-    drunk_height = max(40, int(60 * scale_y))
-    drunk_y = max(30, int(50 * scale_y))
+    drunk_width = max(125, int(200 * scale_x))
+    drunk_height = max(120, int(240 * scale_y))
+    drunk_y = max(100, int(200 * scale_y))
     
     # Physics - scaled to maintain consistent gameplay feel
     player_speed = max(3, int(5 * scale_x))
-    jump_power = max(-8, int(-12 * scale_y / BASE_HEIGHT * 600))  # Negative because up is negative
+    jump_power = max(-16, int(-12 * scale_y / BASE_HEIGHT * 600))  # Negative because up is negative
     gravity = max(0.3, 0.5 * scale_y / BASE_HEIGHT * 600)
 
 def get_current_difficulty():
@@ -1364,9 +1518,11 @@ def draw_score_popups(surface):
 def reset_game():
     """Reset all game variables for a new game"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, start_time, last_bottle_time, bottles
-    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier, score_popups
-    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
-    global current_throwing_hand, visual_effects, player_jumping, drunk_current_animation
+    global score, bottles_dodged, close_calls, combo_multiplier, score_popups
+    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time
+    global visual_effects, player_jumping, drunk_current_animation
+    global left_hand_preview, right_hand_preview, left_hand_preview_time, right_hand_preview_time
+    global player_facing_right, player_last_direction
     
     # Recalculate scaled values in case screen size changed
     get_scaled_values()
@@ -1381,12 +1537,15 @@ def reset_game():
     last_left_bottle_time = pg.time.get_ticks()
     bottles = []
     
-    # Reset dual hand system
-    next_bottle_preview = None
-    next_bottle_show_time = 0
-    next_left_bottle_preview = None
-    next_left_bottle_show_time = 0
-    current_throwing_hand = "right"
+    # Reset hand preview system
+    left_hand_preview = None
+    right_hand_preview = None
+    left_hand_preview_time = 0
+    right_hand_preview_time = 0
+    
+    # Reset player direction
+    player_facing_right = True
+    player_last_direction = "right"
     
     # Reset scoring system
     score = 0
@@ -1446,8 +1605,8 @@ def draw_text_or_image(surface, text_key, fallback_text, font, color, pos, cente
     text_img = image_manager.get_image(text_key)
     
     if text_img:
-        # Scale text image appropriately
-        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)
+        # Scale text image appropriately (scaled down by 15 times)
+        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT) / 10
         img_width = int(text_img.get_width() * scale * 0.8)  # Slightly smaller than full scale
         img_height = int(text_img.get_height() * scale * 0.8)
         scaled_img = pg.transform.scale(text_img, (img_width, img_height))
@@ -1521,54 +1680,49 @@ def update_player_animation_state():
     player_on_ground_last_frame = is_on_ground
 
 def draw_animated_player(surface, x, y, width, height):
-    """Draw player with proper animations"""
-    global player_jumping
+    """Draw player with proper animations and direction"""
+    global player_jumping, player_facing_right
     
     # Determine which animation to use
+    current_frame = None
+    
     if not is_on_ground:
         # Jumping animation
         jump_anim = image_manager.get_animation('player_jump')
         if jump_anim:
-            frame = jump_anim.get_current_frame()
-            if frame:
-                scaled_frame = pg.transform.scale(frame, (width, height))
-                
-                # Apply depth effect when jumping
-                if not is_on_ground:
-                    scaled_frame.set_alpha(180)
-                
-                rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
-                surface.blit(scaled_frame, rect.topleft)
-                return
-        
-        # Reset jumping flag when animation finishes or no animation available
-        if jump_anim and jump_anim.is_finished():
-            player_jumping = False
+            current_frame = jump_anim.get_current_frame()
+            # Reset jumping flag when animation finishes
+            if jump_anim.is_finished():
+                player_jumping = False
     
     elif player_moving:
         # Running animation
         run_anim = image_manager.get_animation('player_run')
         if run_anim:
-            frame = run_anim.get_current_frame()
-            if frame:
-                scaled_frame = pg.transform.scale(frame, (width, height))
-                rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
-                surface.blit(scaled_frame, rect.topleft)
-                return
+            current_frame = run_anim.get_current_frame()
     
     else:
         # Idle animation
         idle_anim = image_manager.get_animation('player_idle')
         if idle_anim:
-            frame = idle_anim.get_current_frame()
-            if frame:
-                scaled_frame = pg.transform.scale(frame, (width, height))
-                rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
-                surface.blit(scaled_frame, rect.topleft)
-                return
+            current_frame = idle_anim.get_current_frame()
     
-    # Fallback to old drawing method
-    draw_player_with_depth(surface, x, y, width, height, not is_on_ground, image_manager)
+    if current_frame:
+        # Scale the frame
+        scaled_frame = pg.transform.scale(current_frame, (width, height))
+        
+        # Apply depth effect when jumping
+        if not is_on_ground:
+            scaled_frame.set_alpha(180)
+        
+        # Flip the frame based on direction
+        scaled_frame = pg.transform.flip(scaled_frame, player_facing_right, False)
+        
+        rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
+        surface.blit(scaled_frame, rect.topleft)
+    else:
+        # Fallback to old drawing method
+        draw_player_with_depth(surface, x, y, width, height, not is_on_ground, image_manager)
 
 def update_drunk_animation():
     """Update drunk guy animation state"""
@@ -1604,23 +1758,79 @@ def trigger_drunk_throw(hand):
     drunk_throwing_timer = drunk_throw_duration
 
 def draw_animated_drunk(surface, x, y, width, height):
-    """Draw drunk guy with proper animations"""
-    current_anim = image_manager.get_animation(drunk_current_animation)
+    """Draw drunk guy with proper animations and separated hands"""
+    # Always use idle animation for the main drunk guy
+    idle_anim = image_manager.get_animation('drunk_idle')
     
-    if current_anim:
-        frame = current_anim.get_current_frame()
+    if idle_anim:
+        frame = idle_anim.get_current_frame()
         if frame:
             scaled_frame = pg.transform.scale(frame, (width, height))
             rect = scaled_frame.get_rect(center=(int(x + width//2), int(y + height//2)))
             surface.blit(scaled_frame, rect.topleft)
-            return
+        else:
+            # Fallback to colored rectangle
+            drunk_rect = pg.Rect(int(x), y, width, height)
+            pg.draw.rect(surface, YELLOW, drunk_rect)
+    else:
+        # Fallback to colored rectangle
+        drunk_rect = pg.Rect(int(x), y, width, height)
+        pg.draw.rect(surface, YELLOW, drunk_rect)
     
-    # Fallback to colored rectangle
-    drunk_rect = pg.Rect(int(x), y, width, height)
-    pg.draw.rect(surface, YELLOW, drunk_rect)
+    # Draw hand previews separately
+    draw_hand_previews(surface, x, y, width, height)
+
+def draw_hand_previews(surface, drunk_x, drunk_y, drunk_width, drunk_height):
+    """Draw hand previews for bottle throws"""
+    global left_hand_preview, right_hand_preview, left_hand_preview_time, right_hand_preview_time
+    
+    scale_x = SCREEN_WIDTH / BASE_WIDTH
+    scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+    
+    # Right hand position (right side of drunk guy)
+    right_hand_x = drunk_x + drunk_width + max(10, int(15 * scale_x))
+    right_hand_y = drunk_y + drunk_height // 3  # Upper part for right hand
+    
+    # Left hand position (left side of drunk guy)
+    left_hand_x = drunk_x - max(15, int(20 * scale_x))
+    left_hand_y = drunk_y + drunk_height // 3  # Upper part for left hand
+    
+    # Draw right hand preview
+    if right_hand_preview is not None:
+        preview_size = max(8, int(12 * min(scale_x, scale_y)))
+        preview_rect = pg.Rect(right_hand_x, right_hand_y, preview_size, preview_size)
+        
+        # Try to use bottle image if available
+        if (image_manager and not image_manager.use_fallbacks()):
+            bottle_img = image_manager.get_image(f'bottle_{right_hand_preview["type_id"]}')
+            if bottle_img:
+                scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+                surface.blit(scaled_img, preview_rect.topleft)
+            else:
+                pg.draw.rect(surface, right_hand_preview['color'], preview_rect)
+        else:
+            pg.draw.rect(surface, right_hand_preview['color'], preview_rect)
+    
+    # Draw left hand preview
+    if left_hand_preview is not None:
+        preview_size = max(8, int(12 * min(scale_x, scale_y)))
+        preview_rect = pg.Rect(left_hand_x, left_hand_y, preview_size, preview_size)
+        
+        # Try to use bottle image if available
+        if (image_manager and not image_manager.use_fallbacks()):
+            bottle_img = image_manager.get_image(f'bottle_{left_hand_preview["type_id"]}')
+            if bottle_img:
+                scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
+                surface.blit(scaled_img, preview_rect.topleft)
+            else:
+                pg.draw.rect(surface, left_hand_preview['color'], preview_rect)
+        else:
+            pg.draw.rect(surface, left_hand_preview['color'], preview_rect)
 
 def show_loading_screen():
-    """Show loading screen while images are being loaded"""
+    """Show animated loading screen while images are being loaded"""
+    global loading_progress, loading_animation_timer
+    
     screen.fill((0, 0, 0))
     
     # Try to use background image
@@ -1632,8 +1842,8 @@ def show_loading_screen():
     # Title
     title_img = image_manager.get_image('text_title')
     if title_img:
-        # Scale title image to appropriate size
-        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)
+        # Scale title image to appropriate size (scaled down by 15 times)
+        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT) / 10
         title_width = int(title_img.get_width() * scale)
         title_height = int(title_img.get_height() * scale)
         scaled_title = pg.transform.scale(title_img, (title_width, title_height))
@@ -1650,13 +1860,39 @@ def show_loading_screen():
     loading_rect = loading_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(loading_text, loading_rect)
     
-    # Progress indicator
+    # Animated progress bar
+    progress_bar_width = int(SCREEN_WIDTH * 0.6)
+    progress_bar_height = max(20, int(30 * SCREEN_HEIGHT / BASE_HEIGHT))
+    progress_bar_x = (SCREEN_WIDTH - progress_bar_width) // 2
+    progress_bar_y = SCREEN_HEIGHT // 2 + 50
+    
+    # Progress bar background
+    pg.draw.rect(screen, (50, 50, 50), (progress_bar_x, progress_bar_y, progress_bar_width, progress_bar_height))
+    pg.draw.rect(screen, (100, 100, 100), (progress_bar_x, progress_bar_y, progress_bar_width, progress_bar_height), 2)
+    
+    # Animated progress
     if image_manager.is_loading():
-        progress_text = font_small.render("Please wait...", True, (128, 128, 128))
+        # Get actual loading progress
+        actual_progress = image_manager.get_loading_progress()
+        
+        # Draw actual progress bar
+        progress_width = int(progress_bar_width * actual_progress)
+        pg.draw.rect(screen, (0, 150, 255), (progress_bar_x, progress_bar_y, progress_width, progress_bar_height))
+        
+        # Show percentage text
+        percentage_text = image_manager.get_loading_percentage()
+        progress_text = font_small.render(f"Loading... {percentage_text}", True, (128, 128, 128))
+        
+        # Show spacebar skip option
+        skip_text = font_small.render("Press SPACEBAR to skip loading", True, (255, 165, 0))  # Orange color
+        skip_rect = skip_text.get_rect(center=(SCREEN_WIDTH // 2, progress_bar_y + progress_bar_height + 60))
+        screen.blit(skip_text, skip_rect)
     else:
+        # Show full progress bar when done
+        pg.draw.rect(screen, (0, 255, 100), (progress_bar_x, progress_bar_y, progress_bar_width, progress_bar_height))
         progress_text = font_small.render("Press any key to continue", True, (0, 255, 100))
     
-    progress_rect = progress_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT * 2 // 3))
+    progress_rect = progress_text.get_rect(center=(SCREEN_WIDTH // 2, progress_bar_y + progress_bar_height + 30))
     screen.blit(progress_text, progress_rect)
     
     pg.display.flip()
@@ -1664,10 +1900,6 @@ def show_loading_screen():
 def show_menu():
     """Display the main menu with enhanced visuals"""
     draw_background(screen, 'menu')
-    
-    # Title with image support
-    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
-                      (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
     
     # Buttons - dynamically scaled
     scale_x = SCREEN_WIDTH / BASE_WIDTH
@@ -1680,9 +1912,13 @@ def show_menu():
     spacing = max(40, int(50 * scale_y))
     start_y = SCREEN_HEIGHT // 2 - max(80, int(100 * scale_y))
     
+    # Title with image support - positioned just above play button with same spacing
+    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
+                      (SCREEN_WIDTH // 2, start_y - spacing))
+    
     play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium, hover_color=GREEN, text_key='text_play')
     settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium, text_key='text_settings')
-    bottle_config_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "BOTTLE CONFIG", font_medium, hover_color=PURPLE)
+    bottle_config_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "BOTTLE CONFIG", font_medium, hover_color=PURPLE, text_key='text_bottle_config')
     leaderboard_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "LEADERBOARD", font_medium, hover_color=YELLOW, text_key='text_leaderboard')
     exit_button = Button(button_x, start_y + spacing * 4, button_width, button_height, "QUIT", font_medium, hover_color=RED, text_key='text_quit')
     
@@ -1777,9 +2013,8 @@ def show_bottle_config():
     # Calculate visible bottles
     max_visible_bottles = max(1, int(list_area_height // line_spacing))
     
-    # Initialize scroll position if not exists
-    if 'bottle_config_scroll' not in globals():
-        global bottle_config_scroll
+    # Ensure bottle_config_scroll is initialized
+    if bottle_config_scroll is None:
         bottle_config_scroll = 0
     
     # Create scrollbar for bottle list
@@ -1787,17 +2022,16 @@ def show_bottle_config():
     scrollbar_x = SCREEN_WIDTH - max(40, int(50 * scale_x))
     scrollbar_height = list_area_height
     
-    if ('bottle_config_scrollbar' not in globals() or 
-        bottle_config_scrollbar.total_items != 15):
-        bottle_config_scrollbar = ScrollBar(
-            scrollbar_x,
-            list_start_y,
-            scrollbar_width,
-            scrollbar_height,
-            15,  # Total bottle types
-            max_visible_bottles
-        )
-        bottle_config_scrollbar.set_scroll_position(bottle_config_scroll)
+    # Always create a new scrollbar to avoid crashes
+    bottle_config_scrollbar = ScrollBar(
+        scrollbar_x,
+        list_start_y,
+        scrollbar_width,
+        scrollbar_height,
+        15,  # Total bottle types
+        max_visible_bottles
+    )
+    bottle_config_scrollbar.set_scroll_position(bottle_config_scroll)
     
     # Draw bottle list
     visible_bottles = range(bottle_config_scroll + 1, min(16, bottle_config_scroll + max_visible_bottles + 1))
@@ -1844,6 +2078,11 @@ def show_bottle_config():
     inst_text = font_small.render("Click on a bottle to customize it", True, GRAY)
     inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(20, int(30 * scale_y))))
     screen.blit(inst_text, inst_rect)
+    
+    # Scroll instructions
+    scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
+    scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(40, int(50 * scale_y))))
+    screen.blit(scroll_inst_text, scroll_inst_rect)
     
     # Back button
     button_width = max(80, int(120 * scale_x))
@@ -1926,47 +2165,34 @@ def show_leaderboard():
     box_height = 40 + scores_area_height + 2 * box_margin
 
     outline_rect = pg.Rect(box_x, box_y, box_width, box_height)
-    pg.draw.rect(screen, GRAY, outline_rect, max(2, int(3 * min(scale_x, scale_y))))
+    pg.draw.rect(screen, WHITE, outline_rect, max(2, int(3 * min(scale_x, scale_y))))
+    pg.draw.rect(screen, BLACK, outline_rect, 0)
     
     # Calculate how many scores can fit in the grey box
     available_height = box_height - 2 * box_margin
     max_visible_scores = max(1, int(available_height // line_spacing))
     
-    # Create scrollbar only if it doesn't exist or needs updating
+    # Ensure leaderboard_scroll is initialized
+    if leaderboard_scroll is None:
+        leaderboard_scroll = 0
+    
+    # Create scrollbar
     scrollbar_width = max(15, int(20 * scale_x))
     scrollbar_x = box_x + box_width + max(5, int(8 * scale_x))
     scrollbar_y = box_y
     scrollbar_height = box_height
     
-    # Only create new scrollbar if dimensions changed or doesn't exist
-    if ('scrollbar' not in globals() or 
-        scrollbar.rect.x != scrollbar_x or 
-        scrollbar.rect.y != scrollbar_y or 
-        scrollbar.rect.width != scrollbar_width or 
-        scrollbar.rect.height != scrollbar_height or
-        scrollbar.total_items != len(all_scores) or
-        scrollbar.visible_items != max_visible_scores):
-        
-        old_dragging = False
-        old_scroll = 0
-        if 'scrollbar' in globals():
-            old_dragging = scrollbar.dragging
-            old_scroll = scrollbar.scroll_position
-            
-        scrollbar = ScrollBar(
-            scrollbar_x,
-            scrollbar_y,
-            scrollbar_width,
-            scrollbar_height,
-            len(all_scores),
-            max_visible_scores
-        )
-        
-        # Preserve dragging state and scroll position
-        scrollbar.dragging = old_dragging
-        scrollbar.set_scroll_position(old_scroll)
+    # Always create a new scrollbar to avoid crashes
+    scrollbar = ScrollBar(
+        scrollbar_x,
+        scrollbar_y,
+        scrollbar_width,
+        scrollbar_height,
+        len(all_scores),
+        max_visible_scores
+    )
     
-    # Update scroll position from global variable
+    # Set scroll position
     scrollbar.set_scroll_position(leaderboard_scroll)
     
     # Display visible scores within the grey box bounds
@@ -2011,6 +2237,11 @@ def show_leaderboard():
         empty_text = font_medium.render("No scores yet!", True, GRAY)
         empty_rect = empty_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         screen.blit(empty_text, empty_rect)
+    else:
+        # Scroll instructions for leaderboard
+        scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
+        scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height + max(20, int(30 * scale_y))))
+        screen.blit(scroll_inst_text, scroll_inst_rect)
     
     # Draw scrollbar only if needed
     if len(all_scores) > max_visible_scores:
@@ -2442,6 +2673,9 @@ def start_fade_transition(target_state):
     fade_direction = 1  # Start fade out
     next_state = target_state
     fade_alpha = 0
+    
+    # Ensure window state is proper when transitioning
+    restore_window_state()
 
 def update_fade():
     """Update fade transition and return True if transition is complete"""
@@ -2479,9 +2713,10 @@ def draw_fade():
 def safe_game_loop():
     """Enhanced main game loop with animations and visual effects"""
     global player_x, player_y, vel_y, is_on_ground, drunk_x, lives, last_bottle_time, bottles, start_time, screen
-    global next_bottle_preview, next_bottle_show_time, score, bottles_dodged, close_calls, combo_multiplier
-    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time, next_left_bottle_preview, next_left_bottle_show_time
-    global current_throwing_hand, image_manager, visual_effects
+    global score, bottles_dodged, close_calls, combo_multiplier
+    global bottle_spawn_time, left_hand_spawn_time, last_left_bottle_time
+    global image_manager, visual_effects
+    global left_hand_preview, right_hand_preview, left_hand_preview_time, right_hand_preview_time
     
     running = True
     frame_count = 0
@@ -2506,12 +2741,16 @@ def safe_game_loop():
         
         # Update drunk animation state
         update_drunk_animation()
-        
+        global player_facing_right
         # Player movement
         if keys[pg.K_LEFT] or keys[pg.K_a]:
             player_x = max(0, player_x - player_speed)
+            player_facing_right = False
+            player_last_direction = "left"
         if keys[pg.K_RIGHT] or keys[pg.K_d]:
             player_x = min(SCREEN_WIDTH - player_width, player_x + player_speed)
+            player_facing_right = True
+            player_last_direction = "right"
         
         # Jumping
         if (keys[pg.K_SPACE] or keys[pg.K_w] or keys[pg.K_UP]) and is_on_ground:
@@ -2544,7 +2783,7 @@ def safe_game_loop():
         left_hand_y = drunk_y + drunk_height // 3  # Upper part for left hand
         
         # RIGHT HAND: Bottle preview and spawning system
-        if next_bottle_preview is None:
+        if right_hand_preview is None:
             # Time to show a new preview bottle from right hand
             if current_time - last_bottle_time > bottle_spawn_time:
                 # Get random bottle type based on spawn weights
@@ -2552,15 +2791,15 @@ def safe_game_loop():
                 bottle_config_data = bottle_config.get_bottle_config(bottle_type_id)
                 
                 # Create preview bottle (not thrown yet)
-                next_bottle_preview = {
+                right_hand_preview = {
                     'type_id': bottle_type_id,
                     'config': bottle_config_data,
                     'color': bottle_config_data['color']
                 }
-                next_bottle_show_time = current_time
+                right_hand_preview_time = current_time
         
         # LEFT HAND: Bottle preview and spawning system
-        if next_left_bottle_preview is None:
+        if left_hand_preview is None:
             # Time to show a new preview bottle from left hand
             if current_time - last_left_bottle_time > left_hand_spawn_time:
                 # Get random bottle type based on spawn weights
@@ -2568,98 +2807,69 @@ def safe_game_loop():
                 bottle_config_data = bottle_config.get_bottle_config(bottle_type_id)
                 
                 # Create preview bottle (not thrown yet)
-                next_left_bottle_preview = {
+                left_hand_preview = {
                     'type_id': bottle_type_id,
                     'config': bottle_config_data,
                     'color': bottle_config_data['color']
                 }
-                next_left_bottle_show_time = current_time
+                left_hand_preview_time = current_time
         
-        # Draw RIGHT HAND preview bottle
-        if next_bottle_preview is not None:
+        # Check if it's time to throw bottles from hands
+        # RIGHT HAND throwing
+        if right_hand_preview is not None and current_time - right_hand_preview_time >= next_bottle_throw_delay:
+            # Trigger right hand throwing animation
+            trigger_drunk_throw("right")
+            
+            # Create bottle from right hand
+            scale_x = SCREEN_WIDTH / BASE_WIDTH
+            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+            right_hand_x = drunk_x + drunk_width + max(10, int(15 * scale_x))
+            right_hand_y = drunk_y + drunk_height // 3
             preview_size = max(8, int(12 * min(scale_x, scale_y)))
-            preview_rect = pg.Rect(right_hand_x, right_hand_y, preview_size, preview_size)
             
-            # Try to use bottle image if available
-            if (image_manager and 
-                not image_manager.use_fallbacks()):
-                
-                bottle_img = image_manager.get_image(f'bottle_{next_bottle_preview["type_id"]}')
-                if bottle_img:
-                    # Scale image to preview size
-                    scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
-                    screen.blit(scaled_img, preview_rect.topleft)
-                else:
-                    # Fallback to colored rectangle
-                    pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
-            else:
-                # Use fallback colored rectangle
-                pg.draw.rect(screen, next_bottle_preview['color'], preview_rect)
+            new_bottle = Bottle(
+                right_hand_x + preview_size // 2,
+                right_hand_y + preview_size // 2,
+                player_x + player_width // 2,
+                player_base_y + player_height + 30,  # Target below the player
+                right_hand_preview['type_id'],
+                "right",
+                is_preview_transition=True
+            )
+            new_bottle.image_manager = image_manager
+            bottles.append(new_bottle)
             
-            # Check if it's time to throw the bottle from right hand
-            if current_time - next_bottle_show_time >= next_bottle_throw_delay:
-                # Trigger right hand throwing animation
-                trigger_drunk_throw("right")
-                
-                # Create transition bottle that starts visible
-                new_bottle = Bottle(
-                    right_hand_x + preview_size // 2,  # Start from preview position
-                    right_hand_y + preview_size // 2,
-                    player_x + player_width // 2,
-                    player_base_y + player_height // 2,
-                    next_bottle_preview['type_id'],
-                    "right",
-                    is_preview_transition=True  # Start at visible z
-                )
-                new_bottle.image_manager = image_manager
-                bottles.append(new_bottle)
-                
-                # Reset for next bottle
-                next_bottle_preview = None
-                last_bottle_time = current_time
+            # Reset for next bottle
+            right_hand_preview = None
+            last_bottle_time = current_time
         
-        # Draw LEFT HAND preview bottle
-        if next_left_bottle_preview is not None:
+        # LEFT HAND throwing
+        if left_hand_preview is not None and current_time - left_hand_preview_time >= next_left_bottle_throw_delay:
+            # Trigger left hand throwing animation
+            trigger_drunk_throw("left")
+            
+            # Create bottle from left hand
+            scale_x = SCREEN_WIDTH / BASE_WIDTH
+            scale_y = SCREEN_HEIGHT / BASE_HEIGHT
+            left_hand_x = drunk_x - max(15, int(20 * scale_x))
+            left_hand_y = drunk_y + drunk_height // 3
             preview_size = max(8, int(12 * min(scale_x, scale_y)))
-            preview_rect = pg.Rect(left_hand_x, left_hand_y, preview_size, preview_size)
             
-            # Try to use bottle image if available
-            if (image_manager and 
-                not image_manager.use_fallbacks()):
-                
-                bottle_img = image_manager.get_image(f'bottle_{next_left_bottle_preview["type_id"]}')
-                if bottle_img:
-                    # Scale image to preview size
-                    scaled_img = pg.transform.scale(bottle_img, (preview_size, preview_size))
-                    screen.blit(scaled_img, preview_rect.topleft)
-                else:
-                    # Fallback to colored rectangle
-                    pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
-            else:
-                # Use fallback colored rectangle
-                pg.draw.rect(screen, next_left_bottle_preview['color'], preview_rect)
+            new_bottle = Bottle(
+                left_hand_x + preview_size // 2,
+                left_hand_y + preview_size // 2,
+                player_x + player_width // 2,
+                player_base_y + player_height + 30,  # Target below the player
+                left_hand_preview['type_id'],
+                "left",
+                is_preview_transition=True
+            )
+            new_bottle.image_manager = image_manager
+            bottles.append(new_bottle)
             
-            # Check if it's time to throw the bottle from left hand
-            if current_time - next_left_bottle_show_time >= next_left_bottle_throw_delay:
-                # Trigger left hand throwing animation
-                trigger_drunk_throw("left")
-                
-                # Create transition bottle that starts visible
-                new_bottle = Bottle(
-                    left_hand_x + preview_size // 2,  # Start from preview position
-                    left_hand_y + preview_size // 2,
-                    player_x + player_width // 2,
-                    player_base_y + player_height // 2,
-                    next_left_bottle_preview['type_id'],
-                    "left",
-                    is_preview_transition=True  # Start at visible z
-                )
-                new_bottle.image_manager = image_manager
-                bottles.append(new_bottle)
-                
-                # Reset for next bottle
-                next_left_bottle_preview = None
-                last_left_bottle_time = current_time
+            # Reset for next bottle
+            left_hand_preview = None
+            last_left_bottle_time = current_time
         
         # Update bottles and separate by layer
         bottles_to_remove = []
@@ -2707,11 +2917,11 @@ def safe_game_loop():
             else:
                 # Determine current player z-range based on jumping state
                 if is_on_ground:
-                    current_player_z_start = player_z_ground_start
-                    current_player_z_end = player_z_ground_end
+                    current_player_z_start = 0.2
+                    current_player_z_end = 1.0
                 else:
-                    current_player_z_start = player_z_air_start
-                    current_player_z_end = player_z_air_end
+                    current_player_z_start = 0.2
+                    current_player_z_end = 1.0
                 
                 # Separate bottles by z-position for proper layering
                 if bottle.z < current_player_z_start:
@@ -2873,17 +3083,32 @@ def main():
     """Enhanced main game function with animations and visual effects"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
     global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small, fade_direction, next_state
-    global bottle_config_scroll, image_manager
+    global bottle_config_scroll, image_manager, bottle_config_scrollbar, scrollbar, fade_surface
 
     leaderboard = LeaderboardManager()
     
-    # Initialize bottle config scroll position
+    # Add default scores for testing
+    leaderboard.add_default_scores()
+    
+    # Initialize scroll positions
     bottle_config_scroll = 0
+    leaderboard_scroll = 0
+    
+    # Initialize scrollbars
+    bottle_config_scrollbar = None
+    scrollbar = None
+    
+    # Ensure window is in proper state
+    restore_window_state()
     
     try:
         while True:
             # Update fade transition
             update_fade()
+            
+            # Periodic window state check (every 60 frames = 1 second at 60 FPS)
+            if pg.time.get_ticks() % 1000 < 16:  # Check roughly once per second
+                restore_window_state()
             
             # Handle global resize events for all states
             for event in pg.event.get():
@@ -2892,7 +3117,50 @@ def main():
                 elif event.type == pg.VIDEORESIZE and not is_fullscreen:
                     # Handle window resize
                     new_width, new_height = event.w, event.h
+                    SCREEN_WIDTH = new_width
+                    SCREEN_HEIGHT = new_height
                     update_screen_dimensions(new_width, new_height)
+                    
+                    # Recreate fade surface with new dimensions
+                    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                    fade_surface.fill((0, 0, 0))
+                    
+                elif event.type == pg.WINDOWMAXIMIZED and not is_fullscreen:
+                    # Handle window maximize - update to full screen dimensions
+                    # Get the actual window dimensions after maximize
+                    SCREEN_WIDTH = screen.get_width()
+                    SCREEN_HEIGHT = screen.get_height()
+                    update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    
+                    # Recreate fade surface with new dimensions
+                    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                    fade_surface.fill((0, 0, 0))
+                    logging.info(f"Window maximized: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+                    
+                elif event.type == pg.WINDOWRESTORED and not is_fullscreen:
+                    # Handle window restore - update to restored dimensions
+                    # Get the actual window dimensions after restore
+                    SCREEN_WIDTH = screen.get_width()
+                    SCREEN_HEIGHT = screen.get_height()
+                    update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    
+                    # Recreate fade surface with new dimensions
+                    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                    fade_surface.fill((0, 0, 0))
+                    logging.info(f"Window restored: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+                    
+                elif event.type == pg.WINDOWMINIMIZED:
+                    # Handle window minimize - just log it for now
+                    logging.info("Window minimized")
+                    
+                elif event.type == pg.WINDOWFOCUSGAINED:
+                    # Handle window focus gained - ensure proper state
+                    logging.info("Window focus gained")
+                    restore_window_state()
+                    
+                elif event.type == pg.WINDOWFOCUSLOST:
+                    # Handle window focus lost - just log it
+                    logging.info("Window focus lost")
                     
                 # Re-queue the event for state-specific handling
                 pg.event.post(event)
@@ -2905,7 +3173,14 @@ def main():
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
                             return
-                        elif event.type == pg.KEYDOWN or event.type == pg.MOUSEBUTTONDOWN:
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_SPACE:
+                                # Skip loading screen with spacebar (optional)
+                                start_fade_transition(MENU)
+                            elif not image_manager.is_loading():
+                                # Any other key or mouse click only works when loading is complete
+                                start_fade_transition(MENU)
+                        elif event.type == pg.MOUSEBUTTONDOWN:
                             if not image_manager.is_loading():
                                 start_fade_transition(MENU)
                 
@@ -2997,9 +3272,37 @@ def main():
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
                                 start_fade_transition(MENU)
+                            elif event.key == pg.K_UP:
+                                bottle_config_scroll = max(0, bottle_config_scroll - 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_DOWN:
+                                bottle_config_scroll = min(14, bottle_config_scroll + 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_PAGEUP:
+                                # Page up - scroll by multiple items
+                                bottle_config_scroll = max(0, bottle_config_scroll - 5)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_PAGEDOWN:
+                                # Page down - scroll by multiple items
+                                bottle_config_scroll = min(14, bottle_config_scroll + 5)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_HOME:
+                                # Home - go to top
+                                bottle_config_scroll = 0
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.key == pg.K_END:
+                                # End - go to bottom
+                                bottle_config_scroll = 14
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
                         elif event.type == pg.MOUSEBUTTONDOWN:
                             # Handle scrollbar first
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 bottle_config_scroll = config_scrollbar.scroll_position
                             # Handle bottle selection clicks
                             elif event.button == 1:  # Left click
@@ -3018,13 +3321,23 @@ def main():
                             if back_btn.handle_event(event):
                                 start_fade_transition(MENU)
                         elif event.type == pg.MOUSEMOTION:
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 # Update the scroll position during dragging
                                 bottle_config_scroll = config_scrollbar.scroll_position
                         elif event.type == pg.MOUSEBUTTONUP:
-                            if config_scrollbar.handle_event(event):
+                            if config_scrollbar and config_scrollbar.handle_event(event):
                                 # Update the scroll position when dragging ends
                                 bottle_config_scroll = config_scrollbar.scroll_position
+                        elif event.type == pg.MOUSEWHEEL:
+                            # Handle mouse wheel scrolling
+                            if event.y > 0:  # Scroll up
+                                bottle_config_scroll = max(0, bottle_config_scroll - 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
+                            elif event.y < 0:  # Scroll down
+                                bottle_config_scroll = min(14, bottle_config_scroll + 1)
+                                if config_scrollbar:
+                                    config_scrollbar.set_scroll_position(bottle_config_scroll)
                 
                 elif current_state == BOTTLE_EDIT:
                     save_btn, back_btn = show_bottle_edit()
@@ -3053,10 +3366,41 @@ def main():
                             return
                         elif event.type == pg.KEYDOWN:
                             if event.key == pg.K_ESCAPE:
-                                return
+                                start_fade_transition(MENU)
+                            elif event.key == pg.K_UP:
+                                leaderboard_scroll = max(0, leaderboard_scroll - 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_DOWN:
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_PAGEUP:
+                                # Page up - scroll by multiple items
+                                leaderboard_scroll = max(0, leaderboard_scroll - 5)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_PAGEDOWN:
+                                # Page down - scroll by multiple items
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 5)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_HOME:
+                                # Home - go to top
+                                leaderboard_scroll = 0
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.key == pg.K_END:
+                                # End - go to bottom
+                                all_scores = leaderboard.get_all_scores()
+                                leaderboard_scroll = max(0, len(all_scores) - max_visible_scores)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
 
                         # Handle scrollbar events first (all event types)
-                        if scrollbar.handle_event(event):
+                        if scrollbar and scrollbar.handle_event(event):
                             leaderboard_scroll = scrollbar.scroll_position
                         # Handle button events
                         elif clear_btn.handle_event(event):
@@ -3067,6 +3411,17 @@ def main():
                         elif back_btn.handle_event(event):
                             leaderboard_scroll = 0
                             start_fade_transition(MENU)
+                        elif event.type == pg.MOUSEWHEEL:
+                            # Handle mouse wheel scrolling
+                            all_scores = leaderboard.get_all_scores()
+                            if event.y > 0:  # Scroll up
+                                leaderboard_scroll = max(0, leaderboard_scroll - 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
+                            elif event.y < 0:  # Scroll down
+                                leaderboard_scroll = min(len(all_scores) - max_visible_scores, leaderboard_scroll + 1)
+                                if scrollbar:
+                                    scrollbar.set_scroll_position(leaderboard_scroll)
         
                 elif current_state == GAME_OVER:
                     play_again_btn, leaderboard_btn, menu_btn, quit_btn = show_game_over_screen()
@@ -3198,25 +3553,34 @@ current_state = LOADING
 current_username = "NEW USER"
 input_active = True
 
+# Player direction tracking
+player_facing_right = True
+player_last_direction = "right"
+
+# Loading screen variables
+loading_progress = 0
+loading_animation_timer = 0
+loading_animation_speed = 2
+
 # Fade transition variables
 fade_alpha = 0
 fade_direction = 0  # 0=no fade, 1=fade out, -1=fade in
 next_state = None
-fade_speed = 10
+fade_speed = 25 #bigger is faster
 fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 fade_surface.fill((0, 0, 0))
 
 # Game variables (will be calculated dynamically)
-player_width = 30
-player_height = 45
+player_width = 90
+player_height = 90
 player_base_y = SCREEN_HEIGHT - 75
 player_x = SCREEN_WIDTH // 2 - player_width // 2
 player_y = player_base_y
 vel_y = 0
 is_on_ground = True
 player_speed = 5
-jump_power = -12
-gravity = 0.5
+jump_power = -24000000
+gravity = 0.1
 
 # Drunk guy variables
 drunk_width = 40
@@ -3233,10 +3597,10 @@ drunk_throwing_timer = 0
 drunk_throw_duration = 30  # frames
 
 # 3D depth zones for collision detection
-player_z_ground_start = 0.0
-player_z_ground_end = 0.3
-player_z_air_start = 0.7
-player_z_air_end = 1.0
+player_z_ground_start = -100.0
+player_z_ground_end = 100.0
+player_z_air_start = -100.0
+player_z_air_end = 100.0
 
 # Game state variables
 lives = 9
@@ -3272,7 +3636,7 @@ MIN_LEFT_SPAWN_TIME = 300  # Minimum left hand spawn time
 CLOSE_CALL_DISTANCE = 80  # pixels
 combo_multiplier = 1.0
 COMBO_INCREMENT = 0.1
-MAX_COMBO = 5.0
+MAX_COMBO = 10.0
 
 # Leaderboard
 leaderboard = None
@@ -3283,6 +3647,19 @@ max_visible_scores = 10
 scrollbar = None
 bottle_config_scroll = 0
 bottle_config_scrollbar = None
+
+# Hand preview system
+left_hand_preview = None
+right_hand_preview = None
+left_hand_preview_time = 0
+right_hand_preview_time = 0
+
+# Bottle spawning variables (legacy - kept for compatibility)
+next_bottle_preview = None
+next_bottle_show_time = 0
+next_left_bottle_preview = None
+next_left_bottle_show_time = 0
+current_throwing_hand = "right"
 
 # Calculate initial scaled values
 get_scaled_values()
