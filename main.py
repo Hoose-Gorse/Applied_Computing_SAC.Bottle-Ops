@@ -44,14 +44,14 @@ IMAGE_URLS = {
         "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/The%20Man%20The%20Myth%20The%20drunk%20man.png?raw=true"
     ],
     'drunk_left_throw': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Arm%20up%20left%20.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Armd%20mid%20down%20left%20.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Arm%20down%20left.png?raw=true"
     ],
     'drunk_right_throw': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/right.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Arm%20up%20right.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Arm%20mid%20down%20right%20.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/Arm%20down%20right.png?raw=true"
     ],
     
     # Backgrounds for different screens
@@ -67,6 +67,8 @@ IMAGE_URLS = {
     'text_bottle_config': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/bottle-config-button.png?raw=true",
     'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/leaderboard-button.png?raw=true",
     'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/quit-button.png?raw=true",
+    'text_main_menu': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/main-menu-button.png?raw=true",
+    'text_clear': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/clear.png?raw=true",
     'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/back.png?raw=true",
     'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/Game-over.png?raw=true",
     
@@ -216,7 +218,7 @@ class ImageManager:
                 # Count single images
                 single_images = ['background_menu', 'background_game', 'background_settings', 
                                'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
-                               'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
+                               'text_leaderboard', 'text_quit', 'text_main_menu', 'text_clear', 'text_back', 'text_game_over',
                                'button_normal', 'button_hover']
                 
                 for key in single_images:
@@ -1307,7 +1309,7 @@ def set_image_urls(urls_dict):
     # Update single images
     single_keys = ['background_menu', 'background_game', 'background_settings', 
                    'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
-                   'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
+                   'text_leaderboard', 'text_quit', 'text_main_menu', 'text_clear', 'text_back', 'text_game_over',
                    'button_normal', 'button_hover']
     
     for key in single_keys:
@@ -2239,7 +2241,8 @@ def show_leaderboard():
         "CLEAR",
         font_medium,
         color=YELLOW,
-        hover_color=RED
+        hover_color=RED,
+        text_key= 'text_clear'
     )
     
     back_button = Button(
@@ -2409,7 +2412,8 @@ def show_game_over_screen():
         button_width,
         button_height,
         "MAIN MENU",
-        font_small
+        font_small,
+        text_key= 'text_main_menu'
     )
 
     quit_button = Button(
