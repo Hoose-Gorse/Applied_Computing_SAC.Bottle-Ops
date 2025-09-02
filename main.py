@@ -1,24 +1,10 @@
 import pygame as pg
-import random
 from sys import exit
-import logging
-import json
-import os
-import math
-import threading
-import time
-import urllib.request
 from io import BytesIO
+import logging, json, os, math, threading, time, urllib.request, random
 
 # Configure logging for error handling
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('bottle_ops.log'),
-        logging.StreamHandler()
-    ]
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('bottle_ops.log'), logging.StreamHandler()])
 
 # Enhanced Image configuration - now supports all UI elements and animations
 IMAGE_URLS = {
@@ -110,16 +96,7 @@ IMAGE_URLS = {
 }
 
 # Animation configuration
-ANIMATION_CONFIG = {
-    'player_idle': {'fps': 2, 'loop': True},
-    'player_run': {'fps': 8, 'loop': True},
-    'player_jump': {'fps': 6, 'loop': False},
-    'drunk_idle': {'fps': 3, 'loop': True},
-    'drunk_left_throw': {'fps': 12, 'loop': False},
-    'drunk_right_throw': {'fps': 12, 'loop': False},
-    'effect_shatter': {'fps': 8, 'loop': False},
-    'effect_explosion': {'fps': 10, 'loop': False}
-}
+ANIMATION_CONFIG = {'player_idle': {'fps': 2, 'loop': True},'player_run': {'fps': 8, 'loop': True},'player_jump': {'fps': 6, 'loop': False},'drunk_idle': {'fps': 3, 'loop': True},'drunk_left_throw': {'fps': 12, 'loop': False},'drunk_right_throw': {'fps': 12, 'loop': False},'effect_shatter': {'fps': 8, 'loop': False},'effect_explosion': {'fps': 10, 'loop': False}}
 
 USE_LOCAL_IMAGES = False
 LOCAL_IMAGE_PATHS = {}
@@ -226,9 +203,7 @@ class ImageManager:
                         self.total_assets += 1
                 
                 # Count animation frames
-                animation_sequences = ['player_idle', 'player_run', 'player_jump', 
-                                     'drunk_idle', 'drunk_left_throw', 'drunk_right_throw',
-                                     'effect_shatter', 'effect_explosion']
+                animation_sequences = ['player_idle', 'player_run', 'player_jump', 'drunk_idle', 'drunk_left_throw', 'drunk_right_throw','effect_shatter', 'effect_explosion']
                 
                 for seq_key in animation_sequences:
                     if seq_key in IMAGE_URLS:
@@ -291,9 +266,7 @@ class ImageManager:
     def load_image_from_url(self, url):
         """Load image from raw URL using urllib"""
         try:
-            req = urllib.request.Request(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            })
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
             
             with urllib.request.urlopen(req, timeout=10) as response:
                 image_data = response.read()
@@ -795,26 +768,15 @@ class LeaderboardManager:
     def add_default_scores(self):
         """Add default scores for testing"""
         default_scores = [
-            {"username": "Player1", "score": 15000},
-            {"username": "Player2", "score": 12500},
-            {"username": "Player3", "score": 11000},
-            {"username": "Player4", "score": 9500},
-            {"username": "Player5", "score": 8200},
-            {"username": "Player6", "score": 7800},
-            {"username": "Player7", "score": 6500},
-            {"username": "Player8", "score": 5900},
-            {"username": "Player9", "score": 5200},
-            {"username": "Player10", "score": 4800},
-            {"username": "Player11", "score": 4200},
-            {"username": "Player12", "score": 3800},
-            {"username": "Player13", "score": 3400},
-            {"username": "Player14", "score": 3100},
-            {"username": "Player15", "score": 2800},
-            {"username": "Player16", "score": 2500},
-            {"username": "Player17", "score": 2200},
-            {"username": "Player18", "score": 1900},
-            {"username": "Player19", "score": 1600},
-            {"username": "Player20", "score": 1300}
+            {"username": "TVISHATL", "score": 999999},
+            {"username": "Kennydarp", "score": 999998},
+            {"username": "TOWNY", "score": 6767},
+            {"username": "Luffy", "score": 1142},
+            {"username": "QQQ", "score": 888},
+            {"username": "Hoose_Gorse", "score": 3},
+            {"username": "ChatGPT", "score": 0},
+            {"username": "CursorAI", "score": 0},
+            {"username": "Claude", "score": 0}
         ]
         
         # Only add if no scores exist
@@ -1886,7 +1848,7 @@ def show_loading_screen():
         progress_text = font_small.render(f"Loading... {percentage_text}", True, (128, 128, 128))
         
         # Show spacebar skip option
-        skip_text = font_small.render("Press SPACEBAR to skip loading", True, (255, 165, 0))  # Orange color
+        skip_text = font_small.render("Press ENTER to skip loading", True, (255, 165, 0))  # Orange color
         skip_rect = skip_text.get_rect(center=(SCREEN_WIDTH // 2, progress_bar_y + progress_bar_height + 60))
         screen.blit(skip_text, skip_rect)
     else:
@@ -1915,8 +1877,7 @@ def show_menu():
     start_y = SCREEN_HEIGHT // 2 - max(20, int(25 * scale_y))
     
     # Title with image support - positioned just above play button with same spacing
-    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
-                      (SCREEN_WIDTH // 2, start_y))
+    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
     
     play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium, hover_color=GREEN, text_key='text_play')
     settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium, text_key='text_settings')
@@ -2188,7 +2149,7 @@ def show_leaderboard():
         
         # Actual rank in full leaderboard
         actual_rank = leaderboard_scroll + i + 1
-        rank_text = f"{actual_rank}. {username} - {score:,} pts"
+        rank_text = f"{actual_rank}. {username} - {score:,}"
         
         # Highlight top 3 scores
         if username == current_username:
@@ -2278,8 +2239,7 @@ def show_username_input():
     draw_background(screen, 'menu')
 
     # Title with image support
-    draw_text_or_image(screen, None, "ENTER USERNAME", font_large, WHITE,
-                      (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    draw_text_or_image(screen, None, "ENTER USERNAME", font_large, WHITE, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
 
     scale_x = SCREEN_WIDTH / BASE_WIDTH
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
@@ -3152,7 +3112,7 @@ def main():
                         if event.type == pg.QUIT:
                             return
                         elif event.type == pg.KEYDOWN:
-                            if event.key == pg.K_SPACE:
+                            if event.key == pg.K_RETURN:
                                 # Skip loading screen with spacebar (optional)
                                 start_fade_transition(MENU)
                             elif not image_manager.is_loading():
@@ -3177,6 +3137,10 @@ def main():
                         if play_btn.handle_event(event):
                             start_fade_transition(USERNAME_INPUT)
                             input_active = True
+                        elif event.type == pg.KEYDOWN:
+                            if event.key == pg.K_RETURN:
+                                start_fade_transition(USERNAME_INPUT)
+                                input_active = True
                         elif settings_btn.handle_event(event):
                             start_fade_transition(SETTINGS)
                         elif bottle_config_btn.handle_event(event):
