@@ -39,9 +39,9 @@ IMAGE_URLS = {
     
     # Drunk guy animations
     'drunk_idle': [
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true",
-        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/idle.png?raw=true"
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/The%20Man%20The%20Myth%20The%20drunk%20man.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/The%20Man%20The%20Myth%20The%20drunk%20man.png?raw=true",
+        "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/drunk/The%20Man%20The%20Myth%20The%20drunk%20man.png?raw=true"
     ],
     'drunk_left_throw': [
         "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/hand/left.png?raw=true",
@@ -1910,11 +1910,11 @@ def show_menu():
     button_x = SCREEN_WIDTH // 2 - button_width // 2
     
     spacing = max(40, int(50 * scale_y))
-    start_y = SCREEN_HEIGHT // 2 - max(80, int(100 * scale_y))
+    start_y = SCREEN_HEIGHT // 2 - max(20, int(25 * scale_y))
     
     # Title with image support - positioned just above play button with same spacing
     draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
-                      (SCREEN_WIDTH // 2, start_y - spacing))
+                      (SCREEN_WIDTH // 2, start_y))
     
     play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium, hover_color=GREEN, text_key='text_play')
     settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium, text_key='text_settings')
@@ -1954,17 +1954,6 @@ def show_settings():
     scale_x = SCREEN_WIDTH / BASE_WIDTH
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
     
-    # Fullscreen toggle - scaled proportionally
-    fullscreen_text = "Fullscreen: ON" if is_fullscreen else "Fullscreen: OFF"
-    fs_button = Button(
-        SCREEN_WIDTH // 2 - max(80, int(100 * scale_x)), 
-        SCREEN_HEIGHT // 2 - max(20, int(30 * scale_y)), 
-        max(160, int(200 * scale_x)), 
-        max(30, int(40 * scale_y)), 
-        fullscreen_text, 
-        font_medium
-    )
-    
     # Back button - scaled proportionally
     back_button = Button(
         SCREEN_WIDTH // 2 - max(80, int(100 * scale_x)), 
@@ -1979,16 +1968,11 @@ def show_settings():
     
     # Update hover states
     mouse_pos = pg.mouse.get_pos()
-    fs_button.update_hover(mouse_pos)
     back_button.update_hover(mouse_pos)
     
-    # Set image manager for buttons
-    fs_button.image_manager = image_manager
     back_button.image_manager = image_manager
-    
-    fs_button.draw(screen)
     back_button.draw(screen)    
-    return fs_button, back_button
+    return back_button
 
 def show_bottle_config():
     """Display bottle configuration menu with scrollable list and enhanced visuals"""
@@ -2079,11 +2063,6 @@ def show_bottle_config():
     inst_rect = inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(20, int(30 * scale_y))))
     screen.blit(inst_text, inst_rect)
     
-    # Scroll instructions
-    scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
-    scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, list_end_y + max(40, int(50 * scale_y))))
-    screen.blit(scroll_inst_text, scroll_inst_rect)
-    
     # Back button
     button_width = max(80, int(120 * scale_x))
     button_height = max(30, int(40 * scale_y))
@@ -2141,7 +2120,7 @@ def show_leaderboard():
     draw_background(screen, 'leaderboard')
     
     # Title with image support
-    draw_text_or_image(screen, 'text_leaderboard', "LEADERBOARD", font_large, WHITE,
+    draw_text_or_image(screen, None, "LEADERBOARD", font_large, WHITE,
                       (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 6))
     
     # Get all scores
@@ -2234,14 +2213,9 @@ def show_leaderboard():
     
     # Empty leaderboard message
     if len(all_scores) == 0:
-        empty_text = font_medium.render("No scores yet!", True, GRAY)
+        empty_text = font_medium.render("No scores yet!", True, WHITE)
         empty_rect = empty_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         screen.blit(empty_text, empty_rect)
-    else:
-        # Scroll instructions for leaderboard
-        scroll_inst_text = font_small.render("Use arrow keys, mouse wheel, or drag scrollbar to navigate", True, GRAY)
-        scroll_inst_rect = scroll_inst_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + box_height + max(20, int(30 * scale_y))))
-        screen.blit(scroll_inst_text, scroll_inst_rect)
     
     # Draw scrollbar only if needed
     if len(all_scores) > max_visible_scores:
@@ -3247,7 +3221,7 @@ def main():
                         start_fade_transition(GAME_OVER)
                 
                 elif current_state == SETTINGS:
-                    fs_btn, back_btn = show_settings()  
+                    back_btn = show_settings()  
                     
                     for event in pg.event.get():
                         if event.type == pg.QUIT:
@@ -3256,11 +3230,7 @@ def main():
                             if event.key == pg.K_ESCAPE:
                                 start_fade_transition(MENU)
                         
-                        if fs_btn.handle_event(event):
-                            # Toggle fullscreen using the new safe method
-                            if not toggle_fullscreen():
-                                logging.warning("Failed to toggle fullscreen mode")
-                        elif back_btn.handle_event(event):
+                        if back_btn.handle_event(event):
                             start_fade_transition(MENU)
                 
                 elif current_state == BOTTLE_CONFIG:
