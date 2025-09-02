@@ -64,10 +64,11 @@ IMAGE_URLS = {
     'text_title': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/backgrounds/bottle-ops-white.png?raw=true",
     'text_play': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/play-button.png?raw=true",
     'text_settings': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/setting-button.png?raw=true",
+    'text_bottle_config': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/bottle-config-button.png?raw=true",
     'text_leaderboard': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/leaderboard-button.png?raw=true",
     'text_quit': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/quit-button.png?raw=true",
     'text_back': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/back.png?raw=true",
-    'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/ui/game_over.png?raw=true",
+    'text_game_over': "https://github.com/Hoose-Gorse/Applied_Computing_SAC.Bottle-Ops/blob/main/graphics/buttons/Game-over.png?raw=true",
     
     # Special effects
     'effect_shatter': [
@@ -214,7 +215,7 @@ class ImageManager:
                 
                 # Count single images
                 single_images = ['background_menu', 'background_game', 'background_settings', 
-                               'background_leaderboard', 'text_title', 'text_play', 'text_settings',
+                               'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
                                'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
                                'button_normal', 'button_hover']
                 
@@ -1305,7 +1306,7 @@ def set_image_urls(urls_dict):
     
     # Update single images
     single_keys = ['background_menu', 'background_game', 'background_settings', 
-                   'background_leaderboard', 'text_title', 'text_play', 'text_settings',
+                   'background_leaderboard', 'text_title', 'text_play', 'text_settings', 'text_bottle_config',
                    'text_leaderboard', 'text_quit', 'text_back', 'text_game_over',
                    'button_normal', 'button_hover']
     
@@ -1356,9 +1357,10 @@ def safe_init():
 def create_display(width, height, caption):
     """Safely create display with error handling"""
     try:
-        screen = pg.display.set_mode((width, height))
+        # Create window as resizable from the start to enable maximize button
+        screen = pg.display.set_mode((width, height), pg.SCALED | pg.NOFRAME)
         pg.display.set_caption(caption)
-        logging.info(f"Display created: {width}x{height}")
+        logging.info(f"Display created: {width}x{height} (resizable)")
         return screen
     except Exception as e:
         logging.error(f"Failed to create display: {e}")
@@ -1378,12 +1380,12 @@ def load_font(font_name, size):
 
 def toggle_fullscreen():
     """Toggle fullscreen mode safely"""
-    global is_fullscreen, screen, SCREEN_WIDTH, SCREEN_HEIGHT
+    global is_fullscreen, screen, SCREEN_WIDTH, SCREEN_HEIGHT, fade_surface
     
     try:
         if is_fullscreen:
-            # Switch to windowed mode
-            screen = pg.display.set_mode((BASE_WIDTH, BASE_HEIGHT), pg.RESIZABLE)
+            # Switch to windowed mode - preserve resizable state
+            screen = pg.display.set_mode((BASE_WIDTH, BASE_HEIGHT), pg.SCALED | pg.NOFRAME)
             is_fullscreen = False
             logging.info("Switched to windowed mode")
         else:
@@ -1398,7 +1400,6 @@ def toggle_fullscreen():
         update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
         
         # Recreate fade surface with new dimensions
-        global fade_surface
         fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         fade_surface.fill((0, 0, 0))
         
@@ -1406,6 +1407,36 @@ def toggle_fullscreen():
         
     except Exception as e:
         logging.error(f"Failed to toggle fullscreen: {e}")
+        return False
+
+def restore_window_state():
+    """Restore window to a proper state if needed"""
+    global screen, SCREEN_WIDTH, SCREEN_HEIGHT
+    
+    try:
+        # Get current display info
+        info = pg.display.Info()
+        current_w = info.current_w
+        current_h = info.current_h
+        
+        # Only restore if there's a significant mismatch or if we're not in fullscreen
+        # and the window should be resizable but isn't
+        if not is_fullscreen:
+            # In windowed mode, ensure we have the resizable flag
+            if current_w != SCREEN_WIDTH or current_h != SCREEN_HEIGHT:
+                # Recreate the window with proper dimensions and resizable flag
+                screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SCALED | pg.NOFRAME)
+                logging.info(f"Window state restored: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+        else:
+            # In fullscreen mode, ensure we're actually fullscreen
+            if current_w != SCREEN_WIDTH or current_h != SCREEN_HEIGHT:
+                screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
+                logging.info("Fullscreen state restored")
+                
+        return True
+        
+    except Exception as e:
+        logging.error(f"Failed to restore window state: {e}")
         return False
 
 def update_screen_dimensions(width, height):
@@ -1574,8 +1605,8 @@ def draw_text_or_image(surface, text_key, fallback_text, font, color, pos, cente
     text_img = image_manager.get_image(text_key)
     
     if text_img:
-        # Scale text image appropriately
-        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)
+        # Scale text image appropriately (scaled down by 15 times)
+        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT) / 10
         img_width = int(text_img.get_width() * scale * 0.8)  # Slightly smaller than full scale
         img_height = int(text_img.get_height() * scale * 0.8)
         scaled_img = pg.transform.scale(text_img, (img_width, img_height))
@@ -1811,8 +1842,8 @@ def show_loading_screen():
     # Title
     title_img = image_manager.get_image('text_title')
     if title_img:
-        # Scale title image to appropriate size
-        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT)
+        # Scale title image to appropriate size (scaled down by 15 times)
+        scale = min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT) / 10
         title_width = int(title_img.get_width() * scale)
         title_height = int(title_img.get_height() * scale)
         scaled_title = pg.transform.scale(title_img, (title_width, title_height))
@@ -1870,10 +1901,6 @@ def show_menu():
     """Display the main menu with enhanced visuals"""
     draw_background(screen, 'menu')
     
-    # Title with image support
-    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
-                      (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
-    
     # Buttons - dynamically scaled
     scale_x = SCREEN_WIDTH / BASE_WIDTH
     scale_y = SCREEN_HEIGHT / BASE_HEIGHT
@@ -1885,9 +1912,13 @@ def show_menu():
     spacing = max(40, int(50 * scale_y))
     start_y = SCREEN_HEIGHT // 2 - max(80, int(100 * scale_y))
     
+    # Title with image support - positioned just above play button with same spacing
+    draw_text_or_image(screen, 'text_title', "BOTTLE OPS", font_large, WHITE, 
+                      (SCREEN_WIDTH // 2, start_y - spacing))
+    
     play_button = Button(button_x, start_y, button_width, button_height, "PLAY", font_medium, hover_color=GREEN, text_key='text_play')
     settings_button = Button(button_x, start_y + spacing, button_width, button_height, "SETTINGS", font_medium, text_key='text_settings')
-    bottle_config_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "BOTTLE CONFIG", font_medium, hover_color=PURPLE)
+    bottle_config_button = Button(button_x, start_y + spacing * 2, button_width, button_height, "BOTTLE CONFIG", font_medium, hover_color=PURPLE, text_key='text_bottle_config')
     leaderboard_button = Button(button_x, start_y + spacing * 3, button_width, button_height, "LEADERBOARD", font_medium, hover_color=YELLOW, text_key='text_leaderboard')
     exit_button = Button(button_x, start_y + spacing * 4, button_width, button_height, "QUIT", font_medium, hover_color=RED, text_key='text_quit')
     
@@ -2642,6 +2673,9 @@ def start_fade_transition(target_state):
     fade_direction = 1  # Start fade out
     next_state = target_state
     fade_alpha = 0
+    
+    # Ensure window state is proper when transitioning
+    restore_window_state()
 
 def update_fade():
     """Update fade transition and return True if transition is complete"""
@@ -3049,7 +3083,7 @@ def main():
     """Enhanced main game function with animations and visual effects"""
     global current_state, current_username, input_active, final_score, is_fullscreen, screen, leaderboard, leaderboard_scroll
     global SCREEN_WIDTH, SCREEN_HEIGHT, font_large, font_medium, font_small, fade_direction, next_state
-    global bottle_config_scroll, image_manager, bottle_config_scrollbar, scrollbar
+    global bottle_config_scroll, image_manager, bottle_config_scrollbar, scrollbar, fade_surface
 
     leaderboard = LeaderboardManager()
     
@@ -3064,10 +3098,17 @@ def main():
     bottle_config_scrollbar = None
     scrollbar = None
     
+    # Ensure window is in proper state
+    restore_window_state()
+    
     try:
         while True:
             # Update fade transition
             update_fade()
+            
+            # Periodic window state check (every 60 frames = 1 second at 60 FPS)
+            if pg.time.get_ticks() % 1000 < 16:  # Check roughly once per second
+                restore_window_state()
             
             # Handle global resize events for all states
             for event in pg.event.get():
@@ -3081,9 +3122,45 @@ def main():
                     update_screen_dimensions(new_width, new_height)
                     
                     # Recreate fade surface with new dimensions
-                    global fade_surface
                     fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
                     fade_surface.fill((0, 0, 0))
+                    
+                elif event.type == pg.WINDOWMAXIMIZED and not is_fullscreen:
+                    # Handle window maximize - update to full screen dimensions
+                    # Get the actual window dimensions after maximize
+                    SCREEN_WIDTH = screen.get_width()
+                    SCREEN_HEIGHT = screen.get_height()
+                    update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    
+                    # Recreate fade surface with new dimensions
+                    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                    fade_surface.fill((0, 0, 0))
+                    logging.info(f"Window maximized: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+                    
+                elif event.type == pg.WINDOWRESTORED and not is_fullscreen:
+                    # Handle window restore - update to restored dimensions
+                    # Get the actual window dimensions after restore
+                    SCREEN_WIDTH = screen.get_width()
+                    SCREEN_HEIGHT = screen.get_height()
+                    update_screen_dimensions(SCREEN_WIDTH, SCREEN_HEIGHT)
+                    
+                    # Recreate fade surface with new dimensions
+                    fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                    fade_surface.fill((0, 0, 0))
+                    logging.info(f"Window restored: {SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+                    
+                elif event.type == pg.WINDOWMINIMIZED:
+                    # Handle window minimize - just log it for now
+                    logging.info("Window minimized")
+                    
+                elif event.type == pg.WINDOWFOCUSGAINED:
+                    # Handle window focus gained - ensure proper state
+                    logging.info("Window focus gained")
+                    restore_window_state()
+                    
+                elif event.type == pg.WINDOWFOCUSLOST:
+                    # Handle window focus lost - just log it
+                    logging.info("Window focus lost")
                     
                 # Re-queue the event for state-specific handling
                 pg.event.post(event)
@@ -3489,7 +3566,7 @@ loading_animation_speed = 2
 fade_alpha = 0
 fade_direction = 0  # 0=no fade, 1=fade out, -1=fade in
 next_state = None
-fade_speed = 10
+fade_speed = 25 #bigger is faster
 fade_surface = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 fade_surface.fill((0, 0, 0))
 
